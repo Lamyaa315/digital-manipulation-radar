@@ -1,0 +1,12 @@
+[    8.3s] features: (794645, 78), replies: (2673091, 6), 76 feature columns
+[    9.9s] accounts with a campaign: 794645 (dropped 0 without one)
+[   27.6s] graph: 20372 nodes, 831306 edges, 203 communities
+[   54.2s] LOCO logreg: mean PR-AUC 0.359
+[  172.4s] LOCO rf: mean PR-AUC 0.481
+[  235.8s] LOCO hgb: mean PR-AUC 0.536
+[  246.4s] ablation 'profile only' (hgb): mean PR-AUC 0.112
+[  262.8s] ablation 'reply features only' (hgb): mean PR-AUC 0.503
+[  280.1s] ablation 'behavior + network' (hgb): mean PR-AUC 0.579
+[  285.4s] ablation 'network only' (hgb): mean PR-AUC 0.148
+[  295.5s] paper-style balanced CV (rf): AUC 0.975
+[  296.8s] done -> C:\Users\lamya\Downloads\digital-manipulation-radar\artifacts
