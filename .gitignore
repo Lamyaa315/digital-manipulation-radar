@@ -1,0 +1,7 @@
+data/raw/
+data/sample/
+artifacts/
+__pycache__/
+*.pyc
+.venv/
+*.part

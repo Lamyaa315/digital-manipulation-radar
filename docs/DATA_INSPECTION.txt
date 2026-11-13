@@ -1,0 +1,312 @@
+
+=== poster_tweetid_campaign_type.csv  (2,673,091 rows, 6 columns)
+  poster_tweetid                                int64    nulls(first 5k)=    0  e.g. 1174348484973142016
+  campaign                                      str      nulls(first 5k)=    0  e.g. remain
+  replier_userid                                int64    nulls(first 5k)=    0  e.g. 1166809760945098753
+  replier_label                                 int64    nulls(first 5k)=    0  e.g. 0
+  replier_tweetid                               int64    nulls(first 5k)=    0  e.g. 1174624178554724353
+  type                                          str      nulls(first 5k)=    0  e.g. target
+  value counts of replier_label:
+replier_label
+0    2605720
+1      67371
+  value counts of type:
+type
+target     2160484
+control     512607
+  value counts of campaign:
+campaign
+remain                 2605720
+turkey_052020            34970
+serbia_022020            10154
+saudi_arabia_112019       9491
+honduras_022020           2833
+sa_eg_ae_022020           2795
+egypt_022020              2379
+uae_082019                1128
+uganda_0621                814
+iran_201906                663
+ecuador_082019             656
+iran_201901_1              210
+indonesia_022020           197
+cuba_082020                189
+venezuela_201901           178
+thailand_092020            173
+spain_082019               150
+china_082019               108
+Venezuela_0621              57
+iran_202012                 53
+MX_0621                     45
+CNHU_0621                   35
+china_052020                33
+ira                         22
+iranian                     15
+Tanzania_0621               12
+egypt_uae_082019             9
+qatar_082020                 1
+russia_201901_1              1
+
+=== RQ1_num_targeted_tweet_by_IO.csv  (148,450 rows, 3 columns)
+  replier_userid                                int64    nulls(first 5k)=    0  e.g. 12148412
+  poster_userid                                 int64    nulls(first 5k)=    0  e.g. 1037235288479653888
+  count                                         int64    nulls(first 5k)=    0  e.g. 1
+
+=== RQ1_number_of_reply_per_tweet.csv  (53,931 rows, 2 columns)
+  poster_tweetid                                int64    nulls(first 5k)=    0  e.g. 1000004851579981824
+  reply_count                                   int64    nulls(first 5k)=    0  e.g. 6
+
+=== RQ1_target_annotation.csv  (1,471 rows, 4 columns)
+  userid                                        int64    nulls(first 5k)=    0  e.g. 1626845317
+  country_label                                 str      nulls(first 5k)=    0  e.g. China
+  profession_label                              str      nulls(first 5k)=    0  e.g. News Media
+  campaign                                      str      nulls(first 5k)=    0  e.g. Serbia
+  value counts of campaign:
+campaign
+Serbia    1081
+Egypt      372
+
+=== RQ1_target_follower_following_count.csv  (5,983 rows, 3 columns)
+  userid                                        int64    nulls(first 5k)=    0  e.g. 1223280881537814528
+  followers_count                               int64    nulls(first 5k)=    0  e.g. 106305
+  following_count                               int64    nulls(first 5k)=    0  e.g. 13987
+
+=== RQ1_target_non_target_tweets.csv  (130,193 rows, 4 columns)
+  tweetid                                       uint64   nulls(first 5k)=    0  e.g. 429990571529486336
+  english_text                                  str      nulls(first 5k)=    0  e.g. I saw that a joke (cont) was added to yesterday's video of the rescue of snowbound people in columns on the road near Feketić http://t.co/3eG1SHKr0q
+  type                                          str      nulls(first 5k)=    0  e.g. target
+  campaign                                      str      nulls(first 5k)=    0  e.g. Serbia
+  value counts of type:
+type
+non_target    34803
+target        23313
+  value counts of campaign:
+campaign
+Serbia    36885
+Egypt     21231
+
+=== RQ1_time_difference_of_reply.csv  (2,147,936 rows, 2 columns)
+  replier_tweetid                               int64    nulls(first 5k)=    0  e.g. 312077262310739969
+  diff_min                                      int64    nulls(first 5k)=    0  e.g. 1
+
+=== RQ2_engagement.csv  (7,498 rows, 5 columns)
+  tweetid                                       int64    nulls(first 5k)=    0  e.g. 1329514957201928192
+  retweet_count                                 float64  nulls(first 5k)=  163  e.g. 10.0
+  like_count                                    float64  nulls(first 5k)=  163  e.g. 364.0
+  quote_count                                   float64  nulls(first 5k)=  163  e.g. 3.0
+  type                                          str      nulls(first 5k)=    0  e.g. control
+  value counts of type:
+type
+target     3866
+control    3632
+
+=== RQ2_tweet_classifier_features.csv  (7,816 rows, 101 columns)
+  std_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  range_reply_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_num_hashtags                          float64  nulls(first 5k)=    0  e.g. -0.0
+  std_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  kurtosis_like_count                           float64  nulls(first 5k)=    0  e.g. 0.0
+  range_like_count                              float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_like_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_reply_count                              float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_mention_count                             float64  nulls(first 5k)=    0  e.g. 1.0
+  kurtosis_cosine                               float64  nulls(first 5k)=    0  e.g. -0.5670524835586548
+  posted_retweet_count                          float64  nulls(first 5k)=    0  e.g. 0.0
+  kurtosis_num_url                              float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_retweet_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  mean_like_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  min_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_cosine                                   float64  nulls(first 5k)=    0  e.g. 0.2593832910060882
+  mean_cosine                                   float64  nulls(first 5k)=    0  e.g. 0.3276623487472534
+  max_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  range_num_url                                 int64    nulls(first 5k)=    0  e.g. 0
+  75%_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  kurtosis_reply_count                          float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_mention_count                             float64  nulls(first 5k)=    0  e.g. 1.0
+  min_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  min_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  max_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  std_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  mean_reply_count                              float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_mention_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  range_diff_min                                int64    nulls(first 5k)=    0  e.g. 0
+  25%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_diff_min                              float64  nulls(first 5k)=    0  e.g. -0.0
+  std_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  mean_mention_count                            float64  nulls(first 5k)=    0  e.g. 1.0
+  skew_num_url                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.3199999928474426
+  iqr_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  kurtosis_diff_min                             float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 1.0
+  max_diff_min                                  float64  nulls(first 5k)=    0  e.g. 1.0
+  tweet_label                                   int64    nulls(first 5k)=    0  e.g. 1
+  poster_tweetid                                int64    nulls(first 5k)=    0  e.g. 64953578015571968
+  75%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  min_diff_min                                  float64  nulls(first 5k)=    0  e.g. 1.0
+  entropy_like_count                            float64  nulls(first 5k)=    0  e.g. -0.0
+  posted_like_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  max_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.7599999904632568
+  kurtosis_retweet_count                        float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_mention_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  std_diff_min                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 1.0
+  iqr_diff_min                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  min_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  min_mention_count                             float64  nulls(first 5k)=    0  e.g. 1.0
+  kurtosis_mention_count                        float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 1.0
+  range_cosine                                  float64  nulls(first 5k)=    0  e.g. 0.7899999897927046
+  mean_num_url                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_mention_count                             float64  nulls(first 5k)=    0  e.g. 1.0
+  skew_num_hashtags                             float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  min_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  skew_diff_min                                 float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.2399999946355819
+  25%_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.2000000029802322
+  std_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.1667090654373169
+  50%_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  kurtosis_num_hashtags                         float64  nulls(first 5k)=    0  e.g. 0.0
+  max_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_reply_count                           float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_num_hashtags                             float64  nulls(first 5k)=    0  e.g. 0.0
+  max_mention_count                             float64  nulls(first 5k)=    0  e.g. 1.0
+  75%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.4399999976158142
+  entropy_num_url                               float64  nulls(first 5k)=    0  e.g. -0.0
+  50%_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  org_reply_count                               int64    nulls(first 5k)=    0  e.g. 22
+  std_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  range_mention_count                           int64    nulls(first 5k)=    0  e.g. 0
+  iqr_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  std_mention_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  max_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  mean_diff_min                                 float64  nulls(first 5k)=    0  e.g. 1.0
+  entropy_retweet_count                         float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_retweet_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  min_cosine                                    float64  nulls(first 5k)=    0  e.g. -0.0299999993294477
+  max_num_hashtags                              float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_mention_count                         float64  nulls(first 5k)=    0  e.g. -0.0
+  range_num_hashtags                            int64    nulls(first 5k)=    0  e.g. 0
+  entropy_cosine                                float64  nulls(first 5k)=    0  e.g. 5.800497125301087
+  range_retweet_count                           float64  nulls(first 5k)=    0  e.g. 0.0
+  value counts of tweet_label:
+tweet_label
+0    3950
+1    3866
+
+=== RQ3_replier_classifier_features.csv  (794,645 rows, 78 columns)
+  replier_userid                                int64    nulls(first 5k)=    0  e.g. 1000000209278021632
+  replier_label                                 int64    nulls(first 5k)=    0  e.g. 0
+  age                                           float64  nulls(first 5k)=    0  e.g. 0.0574960471467586
+  mean_mention_count                            float64  nulls(first 5k)=    0  e.g. 2.0
+  min_mention_count                             float64  nulls(first 5k)=    0  e.g. 2.0
+  25%_mention_count                             float64  nulls(first 5k)=    0  e.g. 2.0
+  50%_mention_count                             float64  nulls(first 5k)=    0  e.g. 2.0
+  75%_mention_count                             float64  nulls(first 5k)=    0  e.g. 2.0
+  max_mention_count                             float64  nulls(first 5k)=    0  e.g. 2.0
+  range_mention_count                           int64    nulls(first 5k)=    0  e.g. 0
+  iqr_mention_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_mention_count                         float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_hashtags_count                           float64  nulls(first 5k)=    0  e.g. 0.0
+  min_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  max_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  range_hashtags_count                          int64    nulls(first 5k)=    0  e.g. 0
+  iqr_hashtags_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_hashtags_count                        float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_num_url                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  min_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  max_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  range_num_url                                 int64    nulls(first 5k)=    0  e.g. 0
+  iqr_num_url                                   float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_num_url                               float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_diff_min                                 float64  nulls(first 5k)=    0  e.g. 6.0
+  min_diff_min                                  float64  nulls(first 5k)=    0  e.g. 6.0
+  25%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 6.0
+  50%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 6.0
+  75%_diff_min                                  float64  nulls(first 5k)=    0  e.g. 6.0
+  max_diff_min                                  float64  nulls(first 5k)=    0  e.g. 6.0
+  range_diff_min                                int64    nulls(first 5k)=    0  e.g. 0
+  iqr_diff_min                                  float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_diff_min                              float64  nulls(first 5k)=    0  e.g. -0.0
+  followers_ratio                               float64  nulls(first 5k)=    0  e.g. 5.125212328186929
+  following_ratio                               float64  nulls(first 5k)=    0  e.g. 22.49452739423716
+  mean_reply_count                              float64  nulls(first 5k)=    0  e.g. 0.0
+  min_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  max_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  range_reply_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_reply_count                               float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_reply_count                           float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_like_count                               float64  nulls(first 5k)=    0  e.g. 1.0
+  min_like_count                                float64  nulls(first 5k)=    0  e.g. 1.0
+  25%_like_count                                float64  nulls(first 5k)=    0  e.g. 1.0
+  50%_like_count                                float64  nulls(first 5k)=    0  e.g. 1.0
+  75%_like_count                                float64  nulls(first 5k)=    0  e.g. 1.0
+  max_like_count                                float64  nulls(first 5k)=    0  e.g. 1.0
+  range_like_count                              float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_like_count                                float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_like_count                            float64  nulls(first 5k)=    0  e.g. -0.0
+  mean_retweet_count                            float64  nulls(first 5k)=    0  e.g. 0.0
+  min_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  25%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  50%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  75%_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  max_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  range_retweet_count                           float64  nulls(first 5k)=    0  e.g. 0.0
+  iqr_retweet_count                             float64  nulls(first 5k)=    0  e.g. 0.0
+  entropy_retweet_count                         float64  nulls(first 5k)=    0  e.g. -0.0
+  activity_rate                                 float64  nulls(first 5k)=    0  e.g. 61.5
+  mean_cosine                                   float64  nulls(first 5k)=    0  e.g. 0.0706844106316566
+  min_cosine                                    float64  nulls(first 5k)=    0  e.g. -0.1500000059604644
+  25%_cosine                                    float64  nulls(first 5k)=    0  e.g. -0.0099999997764825
+  50%_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.050000000745058
+  75%_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.1199999973177909
+  max_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.6499999761581421
+  range_cosine                                  float64  nulls(first 5k)=    0  e.g. 0.7999999821186066
+  iqr_cosine                                    float64  nulls(first 5k)=    0  e.g. 0.1299999970942735
+  entropy_cosine                                float64  nulls(first 5k)=    0  e.g. 5.168538229238742
+  value counts of replier_label:
+replier_label
+0    786975
+1      7670
+
+=== RQ3_replier_info.csv  (5,904,482 rows, 6 columns)
+  replier_userid                                int64    nulls(first 5k)=    0  e.g. 12148412
+  activity_count                                float64  nulls(first 5k)=    0  e.g. 464.0
+  replier_label                                 int64    nulls(first 5k)=    0  e.g. 1
+  following_count                               float64  nulls(first 5k)= 3011  e.g. 17.0
+  followers_count                               float64  nulls(first 5k)= 3011  e.g. 170.0
+  age                                           float64  nulls(first 5k)=    0  e.g. 11.504685243365708
+  value counts of replier_label:
+replier_label
+0    5885012
+1      19470
+
+=== config check
+  ok      RQ3_replier_classifier_features.csv: replier_userid
+  ok      RQ3_replier_classifier_features.csv: replier_label
+  ok      poster_tweetid_campaign_type.csv: poster_tweetid
+  ok      poster_tweetid_campaign_type.csv: replier_userid
+  ok      poster_tweetid_campaign_type.csv: campaign
+  ok      poster_tweetid_campaign_type.csv: type
+  ok      poster_tweetid_campaign_type.csv: replier_label
