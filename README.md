@@ -38,7 +38,7 @@ python scripts/make_sample_data.py
 PYTHONPATH=src python -m radar.pipeline --sample
 ```
 
-Real data (about 880 MB):
+Real data (about 880 MB download; the pipeline takes about 5 minutes and needs ~8 GB RAM):
 
 ```bash
 python scripts/download_data.py
