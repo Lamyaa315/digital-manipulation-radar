@@ -78,8 +78,8 @@ def parse(df: pd.DataFrame) -> tuple[pd.DataFrame | None, list[str], list[str]]:
     """-> (normalised replies, errors, notes)."""
     errors, notes = [], []
     if df.dropna(how="all").empty:
-        return None, ["The file has column names but no rows. The template is empty on purpose: add one row "
-                      "per reply (or press “Try the sample” to see a filled-in example)."], notes
+        return None, ["The file has column names but no rows. Add one row per reply "
+                      "(download the example file to see what goes in it)."], notes
     found = ", ".join(f"`{c}`" for c in df.columns[:15]) or "none"
     acc, tw = _pick(df, "account"), _pick(df, "tweet")
     if acc is None:
@@ -202,4 +202,5 @@ def build(r: pd.DataFrame, scorer, name: str, n: int = 100, labels: pd.Series | 
                         "t": pd.to_datetime(r["reply_ms"], unit="ms", utc=True), "delay_min": r["delay_min"]})
     lab = labels.reindex(q.index) if labels is not None else None
     return Investigation(name, "simple", q, used, feats.loc[q.index], e, rep, scorer.threshold,
-                         labels=lab if lab is not None and lab.notna().all() else None, all_scores=p)
+                         labels=lab if lab is not None and lab.notna().all() else None, all_scores=p,
+                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()))
