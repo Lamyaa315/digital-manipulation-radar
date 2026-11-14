@@ -36,6 +36,8 @@ class Investigation:
     n_scored: int = 0                   # accounts the model scored
     n_above: int = 0                    # of those, above the review threshold
     campaign: str = ""                  # dataset campaign, if any
+    focus: list = field(default_factory=list)   # accounts the user asked to check
+    alone: bool = False                 # file holds only a handful of accounts (no context)
     notes: dict = field(default_factory=dict)
 
     # -- decisions -----------------------------------------------------------------------
@@ -142,6 +144,7 @@ def from_upload(scorer, ns: dict, feats_df: pd.DataFrame, replies_df: pd.DataFra
     feats = feats[~feats.index.duplicated()]
     p = pd.Series(scorer.score(feats), index=feats.index)
     top = p.nlargest(n)
+    focus = list(p.index) if p.size <= 5 else []
     groups, e, rep = {}, pd.DataFrame(columns=["u", "v", "shared"]), None
     if replies_df is not None and len(replies_df):
         r = replies_df.rename(columns={replies_df.columns[0]: C.COL_USER, replies_df.columns[1]: C.COL_TWEET})
@@ -164,4 +167,4 @@ def from_upload(scorer, ns: dict, feats_df: pd.DataFrame, replies_df: pd.DataFra
     q["reasons"] = [" · ".join(reasons(feats.loc[u], ns, q.at[u, "group"], q.at[u, "group_size"])) for u in q.index]
     used = {g: m for g, m in groups.items() if g in set(q["group"])}
     return Investigation(name, "upload", q, used, feats.loc[q.index], e, rep, scorer.threshold, all_scores=p,
-                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()))
+                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()), focus=focus)

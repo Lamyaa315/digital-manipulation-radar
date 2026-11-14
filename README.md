@@ -87,6 +87,13 @@ Two upload formats:
   (0.536), because text similarity (LaBSE embeddings of every reply) and the activity ratios cannot be
   rebuilt from a plain file. Reply text is used by a separate, transparent rule that flags near-copies of
   another account's reply to the same tweet (TF-IDF character n-grams). Re-train: `python -m radar.simple`.
+* **Check specific accounts** — name account IDs (or `acct-XXXXXX` codes) on the upload page and they are
+  shown first on the Results page with a plain verdict, rank, group and reasons. Strongest when the file holds
+  every reply to the tweets in question: the same Honduras IO account scores 0.92 (rank 24 of 1,651, in a group)
+  with that context but 0.34 alone, because coordination is only visible next to other accounts.
+  `models/example_two_accounts.csv` holds two typical accounts on their own (one IO, one normal).
+* The accounts in all example files are **excluded from training** of both models, so the examples are a fair
+  test (simple example: 59 of the top 100 are operation accounts, base rate 22 %).
 * **Dataset format** — the 76 released features per account (example: `models/sample_accounts.csv`), scored by the full model.
 
 **About** explains both models and shows their evaluation on campaigns they never saw.

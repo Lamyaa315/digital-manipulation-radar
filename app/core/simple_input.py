@@ -171,10 +171,26 @@ def reasons(row: pd.Series, ns: dict, group: str, size: int, sim: float | None, 
     return [t for _, t in out[:4]] or ["No single signal stands out; the score comes from several weaker signals"]
 
 
-def build(r: pd.DataFrame, scorer, name: str, n: int = 100, labels: pd.Series | None = None) -> Investigation:
+def parse_ids(text: str) -> list[str]:
+    import re
+    return [t.lower().removeprefix("acct-") for t in re.split(r"[\s,;]+", text or "") if t.strip()]
+
+
+def build(r: pd.DataFrame, scorer, name: str, n: int = 100, labels: pd.Series | None = None,
+          focus: list[str] | None = None) -> Investigation:
     feats = S.features(r.rename(columns={}))
     p = pd.Series(scorer.score(feats), index=feats.index)
+    found = []
+    for t in focus or []:                       # full ID, or the short acct-XXXXXX code
+        hit = [t] if t in p.index else [u for u in p.index if len(t) == 6 and u.endswith(t)]
+        found += hit[:1]
+    focus = list(dict.fromkeys(found))
+    alone = p.size <= 5
+    if alone:
+        focus = list(p.index)
     top = p.nlargest(n)
+    if focus:
+        top = p.loc[list(dict.fromkeys(list(top.index) + focus))].sort_values(ascending=False)
     sims = near_copies(r)
     r = r.assign(delay_min=(r["reply_ms"] - r["tweet_ms"]) / 60000)
     fast = (r["delay_min"] <= 60).groupby(r["account"]).mean()
@@ -203,4 +219,4 @@ def build(r: pd.DataFrame, scorer, name: str, n: int = 100, labels: pd.Series | 
     lab = labels.reindex(q.index) if labels is not None else None
     return Investigation(name, "simple", q, used, feats.loc[q.index], e, rep, scorer.threshold,
                          labels=lab if lab is not None and lab.notna().all() else None, all_scores=p,
-                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()))
+                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()), focus=focus, alone=alone)

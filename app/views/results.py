@@ -75,6 +75,9 @@ def render(store) -> None:
     if c.button("Review them yourself (optional) →", width="stretch"):
         goto(3)
 
+    if inv.focus:
+        focus_section(inv)
+
     left, right = st.columns([3, 2], gap="large")
     with left:
         html('<div class="section"><span class="num">01</span><span class="name">Highest-scored accounts</span></div>')
@@ -106,3 +109,42 @@ def render(store) -> None:
             st.markdown(f"Of the top **{len(q)}** accounts, **{n}** were removed by Twitter as part of the operation "
                         f"(**{n / len(q):.0%}**).")
             st.caption("Only possible on data from the dataset. For your own data there is no answer key.")
+
+
+def focus_section(inv) -> None:
+    """The accounts the user asked about, shown first, with a plain verdict."""
+    html('<div class="section"><span class="num">00</span><span class="name">The accounts you asked about</span></div>')
+    if inv.alone:
+        st.info("This file holds only these accounts, so the model judged each one on its own behaviour "
+                "(timing, profile). It cannot see whether they reply together with other accounts — include every "
+                "reply to the same tweets for a stronger check.")
+    ranks = inv.all_scores.rank(ascending=False, method="min")
+    for u in inv.focus:
+        sc = float(inv.all_scores[u])
+        r = inv.queue.loc[u] if u in inv.queue.index else None
+        above = sc >= inv.threshold
+        verdict = ("Behaves like the coordinated accounts the model was trained on — worth a closer look."
+                   if above else "Looks like an ordinary replier to the model.")
+        group = r["group"] if r is not None else ""
+        mates = [m for m in inv.groups.get(group, []) if m != u]
+        with st.container(border=True):
+            c1, c2 = st.columns([2, 3])
+            with c1:
+                html(f'<p class="kicker">account</p><div style="font-size:20px">{escape(str(r["account"]) if r is not None else str(u))}</div>'
+                     f'<p class="idline">{escape(str(u))}</p>'
+                     f'<div style="font-size:30px;margin-top:8px;color:{"#C6F432" if above else "#F2F2F0"}">{sc:.2f}</div>'
+                     f'<p class="idline">score · rank <b>#{int(ranks[u])}</b> of {inv.n_scored:,} · threshold {inv.threshold:.2f}</p>')
+            with c2:
+                st.markdown(f"**{verdict}**")
+                if r is not None:
+                    html("".join(f'<div class="reason"><span class="dot"></span><span>{escape(x)}</span></div>'
+                                 for x in str(r["reasons"]).split(" · ")))
+                if group:
+                    st.caption(f"Member of group {group}: keeps replying to the same tweets as {len(mates)} other "
+                               f"accounts in this file.")
+                elif not inv.alone:
+                    st.caption("Not part of any group: it does not keep replying to the same tweets as other accounts here.")
+                if inv.labels is not None and u in inv.labels.index:
+                    st.caption("Demo data — Twitter's label: " + ("**removed as part of the operation**"
+                               if inv.labels[u] == 1 else "**normal account**"))
+

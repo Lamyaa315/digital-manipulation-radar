@@ -85,19 +85,26 @@ def simple_upload() -> None:
                        "radar_replies_example.csv", "text/csv", width="stretch", key="dl_simple_ex",
                        help="Use it as a template: keep the column names, put your own rows under them.")
     f = st.file_uploader("Replies file (CSV)", type="csv", key="up_simple")
+    ids = st.text_input("Check specific accounts (optional)", key="up_focus",
+                        placeholder="account IDs, separated by commas — they will be shown first")
     n = st.select_slider("Accounts to review", [25, 50, 100, 200], value=100, key="up_n_simple")
-    a, b = st.columns(2)
+    a, b, c = st.columns(3)
     go = a.button("Start with my file", type="primary", width="stretch", disabled=f is None, key="go_simple")
     go_s = b.button("Try the sample", width="stretch", key="go_simple_sample")
+    go_2 = c.button("Try: check 2 accounts", width="stretch", key="go_simple_two")
     st.caption(f"Uses a lighter model built only from what such a file contains (timing, profile, who replies "
                f"with whom). On campaigns it never saw it is weaker than the full model: mean PR-AUC "
                f"{sc.meta['loco_mean_pr_auc']:.2f} vs 0.54. Reply text is checked by a separate rule for near-copies.")
-    if not (go or go_s):
-        st.caption("The sample: every reply to 30 tweets attacked in the Honduras operation (2,256 replies, "
-                   "1,651 accounts).")
+    st.caption("**Checking one account?** Coordination is about accounts acting *together*, so the check is "
+               "strongest when the file holds every reply to the tweets in question and you name the account above. "
+               "A file with only that account's replies still works, but the model then sees its own behaviour only.")
+    if not (go or go_s or go_2):
+        st.caption("Samples: every reply to 30 tweets attacked in the Honduras operation (2,256 replies, 1,651 accounts), "
+                   "or just two of those accounts on their own. None of these accounts were used to train the model.")
         return
     try:
-        df = pd.read_csv(MODELS / "simple_sample.csv") if go_s else pd.read_csv(f)
+        df = (pd.read_csv(MODELS / "simple_sample.csv") if go_s
+              else pd.read_csv(MODELS / "example_two_accounts.csv") if go_2 else pd.read_csv(f))
     except Exception as e:  # noqa: BLE001 - show any parse error to the user
         st.error(f"Could not read the file: {e}")
         return
@@ -108,11 +115,18 @@ def simple_upload() -> None:
         return
     for m in notes:
         st.info(m)
+    focus = SI.parse_ids(ids) if go else []
+    accs = set(r["account"])
+    missing = [x for x in focus if x not in accs and not (len(x) == 6 and any(a.endswith(x) for a in accs))]
+    if missing:
+        st.warning(f"Not in the file: {', '.join(missing[:5])}")
     labels = None
-    if go_s:
+    if go_s or go_2:
         labels = pd.read_csv(MODELS / "simple_sample_labels.csv", dtype={"account_id": str}).set_index("account_id")["label"]
+    name = ("Sample: Honduras replies (simple format)" if go_s else "Sample: two accounts on their own" if go_2
+            else f.name)
     with st.spinner("Computing features and scoring accounts…"):
-        _start(SI.build(r, sc, "Sample: Honduras replies (simple format)" if go_s else f.name, n, labels))
+        _start(SI.build(r, sc, name, n, labels, focus=focus))
 
 
 def full_upload(store: Store) -> None:
