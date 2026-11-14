@@ -8,8 +8,7 @@ from app.views.common import campaign, case_payload, cases, dossier, overview_pa
 
 
 def render(store: Store) -> None:
-    html(f'<p class="kicker"><b>03</b> — NETWORK EXPLORER · {pretty(campaign()).upper()}</p>'
-         '<div class="hero-title" style="font-size:52px">FOLLOW THE <span>LINKS</span></div>')
+    html(f'<p class="kicker">{pretty(campaign())}</p><h1 class="page-title">Network</h1>')
     q = st.text_input("Look up an account", placeholder="full account ID or acct-XXXXXX", key="acct_q")
     if q:
         q = q.strip().lower().removeprefix("acct-")
@@ -42,7 +41,7 @@ def render(store: Store) -> None:
             p = case_payload(store, campaign(), cid)
             labels, group = {}, cid
         sel = canvas.network(p, key=f"exp-{scope}", height=620, selected_group=group, group_labels=labels,
-                             caption=f"{len(p['nodes'])} ACCOUNTS · {len(p['links'])} LINKS · ")
+                             caption=f"{len(p['nodes'])} accounts · {len(p['links'])} links · ")
         if sel:
             st.session_state["acct"] = int(sel["node"])
         st.caption("Click an account to load its dossier below. Scroll to zoom, drag to pan, double-click to reset.")

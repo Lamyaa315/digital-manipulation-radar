@@ -17,7 +17,7 @@ from app.views.common import (campaign, case_payload, cases, dossier, fmt_range,
 def render(store: Store) -> None:
     cs = cases(store)
     if cs is None:
-        html('<p class="kicker"><b>02</b> — INVESTIGATIONS</p>')
+        html('<p class="kicker">Cases</p>')
         st.markdown(f"## No investigation run yet for {pretty(campaign())}")
         if st.button("◉  INITIATE INVESTIGATION", type="primary"):
             bar = st.progress(0.0)
@@ -33,9 +33,9 @@ def render(store: Store) -> None:
 
 # ---------------------------------------------------------------------------------------
 def case_list(store: Store, cs: pd.DataFrame) -> None:
-    html(f'<p class="kicker"><b>02</b> — INVESTIGATIONS · {pretty(campaign()).upper()}</p>'
-         f'<div class="hero-title" style="font-size:52px">CAMPAIGN <span>DISCOVERIES</span></div>'
-         f'<p class="hero-desc">Each case is a group of accounts that kept replying to the same attacked tweets '
+    html(f'<p class="kicker">{pretty(campaign())}</p>'
+         f'<h1 class="page-title">Cases</h1>'
+         f'<p class="lead">Each case is a group of accounts that kept replying to the same attacked tweets '
          f'{tag("RULE")}, ordered by the model\'s average score {tag("MODEL")}. Titles are generated from '
          f'the strongest measured signal.</p>')
     f1, f2, f3 = st.columns([2, 2, 3])
@@ -67,18 +67,18 @@ def case_list(store: Store, cs: pd.DataFrame) -> None:
         </div>""".splitlines()), unsafe_allow_html=True)
         b.markdown("<div style='height:46px'></div>", unsafe_allow_html=True)
         if b.button("Investigate →", key=f"inv-{k['case_id']}", width="stretch"):
-            goto(1, case_id=k["case_id"], acct=None)
+            goto(2, case_id=k["case_id"], acct=None)
 
 
 # ---------------------------------------------------------------------------------------
 def workspace(store: Store, k: pd.Series) -> None:
     if st.button("← All cases"):
-        goto(1, case_id=None, acct=None)
+        goto(2, case_id=None, acct=None)
     t = tier(k["score"])
-    html(f'<p class="kicker"><b>CASE FILE</b> · {pretty(k["campaign"]).upper()} · OPENED FROM LIVE ANALYSIS</p>'
+    html(f'<p class="kicker">Case file · {pretty(k["campaign"])}</p>'
          f'<div style="display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap">'
-         f'<div><div class="hero-title" style="font-size:64px;margin-bottom:0">{k["case_id"]}</div>'
-         f'<p class="hero-sub">{store.title(k)}</p></div>'
+         f'<div><h1 class="page-title" style="margin-bottom:0">{k["case_id"]}</h1>'
+         f'<p class="lead">{store.title(k)}</p></div>'
          f'<div style="min-width:220px;margin-left:auto">{risk(t, k["score"])}</div></div>')
 
     # A. overview
@@ -98,7 +98,7 @@ def workspace(store: Store, k: pd.Series) -> None:
         st.session_state["acct"] = int(store.acc.loc[members, "score"].idxmax())
     p = case_payload(store, k["campaign"], k["case_id"])
     sel = canvas.network(p, key=f"net-{k['case_id']}", height=520, selected_group=k["case_id"], lock_group=True,
-                         caption=f"{len(p['nodes'])} OF {k['size']} ACCOUNTS (MOST CONNECTED) · ")
+                         caption=f"{len(p['nodes'])} of {k['size']} accounts (most connected) · ")
     if sel and int(sel["node"]) != st.session_state.get("acct"):
         st.session_state["acct"] = int(sel["node"])
     deg = pd.Series({n["id"]: n["deg"] for n in p["nodes"]}).sort_values(ascending=False)
@@ -188,7 +188,7 @@ def workspace(store: Store, k: pd.Series) -> None:
         fig.update_layout(height=260, yaxis_title="model score", legend=dict(orientation="h", y=1.15))
         st.plotly_chart(fig, width="stretch", key="tl-one")
     with b:
-        html(f'<p class="kicker">SEQUENCE OF EVENTS {tag("DATASET")}</p>' + "<br>".join(
+        html('<p class="kicker">What happened, in order</p>' + "<br>".join(
             f'<p class="idline" style="margin:6px 0">{s}</p>'
             for s in sequence(all_rep, all_rep["t_post"].iloc[0], members)))
 

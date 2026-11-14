@@ -13,8 +13,7 @@ from app.core.store import C, PRETTY, Store, graph_payload, short, short_tweet, 
 from app.ui import theme as T
 from app.ui.blocks import compact, evidence, figures, html, section, tag
 
-PAGES = ["01 — Radar Room", "02 — Investigations", "03 — Network Explorer",
-         "04 — Activity Timeline", "05 — Data Lab"]
+PAGES = ["Overview", "Score accounts", "Cases", "Network", "Timeline", "Data & model"]
 
 
 def goto(page: int, **state) -> None:
@@ -120,7 +119,7 @@ def radar_payload(_store: Store, campaign: str, top: int = 14, per: int = 70):
 def dossier(store: Store, uid, key: str) -> None:
     d = store.account(uid)
     row, nb, rep = d["row"], d["neighbors"], d["replies"]
-    html(f'<p class="kicker">ACCOUNT DOSSIER</p>'
+    html(f'<p class="kicker">Account</p>'
          f'<h3 style="margin:0">{short(uid)}</h3>'
          f'<p class="idline">id <b>{uid}</b> · campaign <b>{pretty(row["campaign_group"])}</b></p>')
     figures([

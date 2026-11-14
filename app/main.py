@@ -20,7 +20,7 @@ st.set_page_config(page_title="Digital Manipulation Radar", page_icon="◉", lay
 from app.core.store import A, Store  # noqa: E402
 from app.ui import theme  # noqa: E402
 from app.ui.blocks import html  # noqa: E402
-from app.views import datalab, explorer, investigations, room, timeline  # noqa: E402
+from app.views import datalab, explorer, investigations, room, score, timeline  # noqa: E402
 from app.views.common import PAGES, campaign, pretty  # noqa: E402
 
 theme.apply()
@@ -48,21 +48,21 @@ with st.sidebar:
          '<svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="12" fill="none" stroke="#43D9E8" stroke-opacity=".5"/>'
          '<circle cx="13" cy="13" r="7" fill="none" stroke="#43D9E8" stroke-opacity=".3"/>'
          '<path d="M13 13 L13 1" stroke="#43D9E8" stroke-width="1.5"/><circle cx="18" cy="8" r="2" fill="#FF626D"/></svg>'
-         '<div><div style="font-family:Space Grotesk;font-weight:700;letter-spacing:.02em;line-height:1">DM RADAR</div>'
-         '<div class="kicker" style="margin:2px 0 0;font-size:9px">coordination intelligence</div></div></div>')
+         '<div><div style="font-family:Space Grotesk;font-weight:600;line-height:1">Manipulation Radar</div>'
+         '<div class="kicker" style="margin:2px 0 0">coordinated-account finder</div></div></div>')
     page = st.radio("Navigate", PAGES, key="nav", label_visibility="collapsed")
     ran = campaign() in store._cases
-    html(f'<div style="margin-top:30px" class="kicker">ACTIVE DATASET</div>'
+    html(f'<div style="margin-top:30px" class="kicker">Campaign</div>'
          f'<div style="font-size:14px">{pretty(campaign())}</div>'
-         f'<div class="idline" style="margin-top:4px">{"● analysed" if ran else "○ not analysed yet"}'
+         f'<div class="idline" style="margin-top:4px">{"analysed" if ran else "not analysed yet"}'
          f'{" · case " + st.session_state["case_id"] if st.session_state.get("case_id") else ""}</div>')
     if store.info["is_sample"]:
         st.error("SYNTHETIC DATA")
     if store.lite:
-        html('<div class="notice" style="margin-top:14px">HOSTED LITE VERSION — same scores, links and '
-             'groups as the full run; groups were detected offline with the same code.</div>')
+        html('<div class="notice" style="margin-top:14px">Hosted lite version: same scores and groups as '
+             'the full run (groups detected offline with the same code).</div>')
     html('<div class="notice" style="margin-top:30px">Scores rank accounts for human review. '
          'They are not proof of fake accounts or intent.</div>')
 
-{PAGES[0]: room, PAGES[1]: investigations, PAGES[2]: explorer,
- PAGES[3]: timeline, PAGES[4]: datalab}[page].render(store)
+{PAGES[0]: room, PAGES[1]: score, PAGES[2]: investigations, PAGES[3]: explorer,
+ PAGES[4]: timeline, PAGES[5]: datalab}[page].render(store)

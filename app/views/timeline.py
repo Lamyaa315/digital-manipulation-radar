@@ -12,9 +12,9 @@ from app.views.common import campaign, goto, pretty, sequence, show_truth
 
 
 def render(store: Store) -> None:
-    html(f'<p class="kicker"><b>04</b> — ACTIVITY TIMELINE · {pretty(campaign()).upper()}</p>'
-         '<div class="hero-title" style="font-size:52px">REPLAY THE <span>ATTACK</span></div>'
-         f'<p class="hero-desc">Every reply time here is real: Twitter tweet IDs encode their posting time to the '
+    html(f'<p class="kicker">{pretty(campaign())}</p>'
+         '<h1 class="page-title">One tweet, reply by reply</h1>'
+         f'<p class="lead">Every reply time here is real: Twitter tweet IDs encode their posting time to the '
          f'millisecond {tag("DATASET")}.</p>')
     tw = store.tweets(campaign())
     only_text = st.toggle("Only tweets with an English translation", value=True, key="tl_text")
@@ -68,7 +68,7 @@ def render(store: Store) -> None:
                           yaxis=dict(title="share of replies so far", tickformat=".0%"), legend=dict(orientation="h", y=1.15))
         st.plotly_chart(fig, width="stretch", key="tl-cdf")
     with b:
-        html(f'<p class="kicker">SEQUENCE · accounts above threshold {tag("MODEL")}</p>' + "".join(
+        html('<p class="kicker">What happened, in order (accounts above the threshold)</p>' + "".join(
             f'<p class="idline" style="margin:6px 0">{s}</p>'
             for s in sequence(r, posted, set(r.loc[r["flagged"].astype(bool), C.COL_USER]))))
 
@@ -84,4 +84,4 @@ def render(store: Store) -> None:
     if rows:
         uid = int(top.iloc[rows[0]][C.COL_USER])
         if st.button(f"Open {top.iloc[rows[0]]['account']} in the Network Explorer →", type="primary"):
-            goto(2, acct=uid)
+            goto(3, acct=uid)

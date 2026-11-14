@@ -17,8 +17,7 @@ canvas.drag { cursor:grabbing; }
   color:#E8EDF3; font:11px/1.5 'JetBrains Mono',monospace; padding:8px 10px; letter-spacing:.04em;
   opacity:0; transition:opacity .12s; white-space:nowrap; z-index:2; }
 .tip b { color:#43D9E8; font-weight:500; } .tip .c { color:#FF626D; }
-.hud { position:absolute; left:10px; bottom:8px; font:10px 'JetBrains Mono',monospace; color:#87919F;
-  letter-spacing:.12em; pointer-events:none; }
+.hud { position:absolute; left:10px; bottom:8px; font:12px Inter,sans-serif; color:#87919F; pointer-events:none; }
 .hud i { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 5px 0 12px; vertical-align:-1px; }
 """
 
@@ -68,7 +67,7 @@ export default function(component) {
   const sy = n => (n.y - cy + (S.moved[n.id] ? S.moved[n.id][1] : 0)) * fit * V().k + H / 2 + V().ty;
   const rad = n => Math.min(7, 2.2 + Math.sqrt(n.deg) * 0.32) * Math.sqrt(V().k);
   let T = 0;
-  function px(n) { return [sx(n) + Math.sin(T / 1700 + n.ph) * 1.3, sy(n) + Math.cos(T / 2100 + n.ph) * 1.3]; }
+  function px(n) { return [sx(n), sy(n)]; }
 
   function hit(mx, my) {
     let best = null, bd = 144;
@@ -100,9 +99,6 @@ export default function(component) {
       g.forEach(n => { gx += P[n.i][0]; gy += P[n.i][1]; }); gx /= g.length; gy /= g.length;
       const ds = g.map(n => Math.hypot(P[n.i][0] - gx, P[n.i][1] - gy)).sort((p, q) => p - q);
       const r = ds[Math.floor(ds.length * 0.85)] || 0;
-      const p = (t % 2400) / 2400;
-      ctx.strokeStyle = `rgba(67,217,232,${0.5 * (1 - p)})`; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(gx, gy, r + 12 + p * 26, 0, 6.283); ctx.stroke();
       ctx.strokeStyle = 'rgba(67,217,232,.35)'; ctx.setLineDash([2, 5]);
       ctx.beginPath(); ctx.arc(gx, gy, r + 10, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
     }
@@ -112,10 +108,6 @@ export default function(component) {
       const [x, y] = P[n.i]; let r = rad(n);
       let dim = (sel && !neigh.has(n)) || (!sel && grp && n.group !== grp);
       ctx.globalAlpha = dim ? 0.18 : 1;
-      if (n.flag && !dim) {
-        const pulse = 0.5 + 0.5 * Math.sin(t / 600 + n.ph);
-        ctx.shadowColor = 'rgba(255,98,109,.9)'; ctx.shadowBlur = 6 + 6 * pulse;
-      }
       ctx.fillStyle = n.flag ? '#FF626D' : '#7C8AA0';
       ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
       if (n === sel) { ctx.strokeStyle = '#43D9E8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 6.283); ctx.stroke(); }
@@ -204,7 +196,8 @@ export default function(component) {
 
   function draw(t) {
     if (S.t0 === null) S.t0 = t;
-    const el = t - S.t0, sweep = (el * SPEED) % 6.283 - 1.5708, turns = el * SPEED / 6.283;
+    const el = Math.min(t - S.t0, 6.283 / SPEED), sweep = (el * SPEED) % 6.283 - 1.5708, turns = el * SPEED / 6.283;
+    const done = turns >= 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     const [x, y] = C(), r = R();
     // rings
@@ -227,24 +220,23 @@ export default function(component) {
       if (sweptG) ctx.fillText(g.label, lx, ly + 3);
     });
     // sweep wedge
-    const grad = ctx.createConicGradient ? ctx.createConicGradient(sweep - 0.9, x, y) : null;
+    const grad = (!done && ctx.createConicGradient) ? ctx.createConicGradient(sweep - 0.9, x, y) : null;
     if (grad) { grad.addColorStop(0, 'rgba(67,217,232,0)'); grad.addColorStop(0.143, 'rgba(67,217,232,.22)');
       grad.addColorStop(0.1431, 'rgba(67,217,232,0)'); ctx.fillStyle = grad;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, sweep - 0.9, sweep); ctx.closePath(); ctx.fill(); }
-    ctx.strokeStyle = 'rgba(67,217,232,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(...polar(sweep, 1)); ctx.stroke();
+    if (!done) { ctx.strokeStyle = 'rgba(67,217,232,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(...polar(sweep, 1)); ctx.stroke(); }
     // blips
     for (const b of blips) {
       const rel = ((b.a - sweep) % 6.283 + 6.283) % 6.283;       // angle since sweep passed (0..2pi)
       const since = 6.283 - rel;                                   // how far behind the sweep
       const revealed = turns >= 1 || ((b.a + 1.5708 + 6.283) % 6.283) <= ((sweep + 1.5708 + 6.283) % 6.283);
       if (!revealed) continue;
-      const fresh = Math.max(0, 1 - since / 2.2);
+      const fresh = done ? 0.6 : Math.max(0, 1 - since / 2.2);
       const [bx, by] = polar(b.a, b.r);
       const g = hoverG && b.group !== hoverG;
       ctx.globalAlpha = g ? 0.15 : 0.35 + 0.65 * fresh;
       ctx.fillStyle = b.flag ? '#FF626D' : '#9AA7B8';
-      if (b.flag) { ctx.shadowColor = '#FF626D'; ctx.shadowBlur = 4 + 8 * fresh; }
       ctx.beginPath(); ctx.arc(bx, by, b.flag ? 2.6 : 1.8, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
     }
     ctx.globalAlpha = 1;
@@ -253,16 +245,16 @@ export default function(component) {
     ctx.fillStyle = 'rgba(9,11,16,.82)'; ctx.beginPath(); ctx.arc(x, y, Math.min(70, r * 0.3), 0, 6.283); ctx.fill();
     ctx.strokeStyle = 'rgba(67,217,232,.25)'; ctx.stroke();
     if (!blips.length) {
-      ctx.fillStyle = 'rgba(135,145,159,.9)'; ctx.font = '11px JetBrains Mono, monospace';
-      (data.idle || 'AWAITING DATA').split(' — ').forEach((s, i) => ctx.fillText(s, x, y - 2 + i * 14));
+      ctx.fillStyle = 'rgba(135,145,159,.9)'; ctx.font = '13px Inter, sans-serif';
+      (data.idle || 'Not analysed yet').split(' — ').forEach((s, i) => ctx.fillText(s, x, y - 2 + i * 14));
     } else if (turns >= 1) {
       ctx.fillStyle = '#E8EDF3'; ctx.font = '600 22px Space Grotesk, sans-serif';
-      ctx.fillText(groups.length + ' GROUPS', x, y + 6);
+      ctx.fillText(groups.length + ' groups', x, y + 6);
       ctx.fillStyle = '#87919F'; ctx.font = '9px JetBrains Mono, monospace';
-      ctx.fillText('CLICK A SECTOR', x, y + 22);
+      ctx.fillText('click a slice', x, y + 22);
     } else {
       ctx.fillStyle = '#43D9E8'; ctx.font = '10px JetBrains Mono, monospace';
-      ctx.fillText('REVEALING ' + Math.floor(turns * 100) + '%', x, y + 4);
+      ctx.fillText('scanning…', x, y + 4);
     }
     S.raf = requestAnimationFrame(draw);
   }

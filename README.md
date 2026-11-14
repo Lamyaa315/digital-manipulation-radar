@@ -96,3 +96,12 @@ is run offline with the same code and seed, so the groups are identical to a loc
 
 The app uses the full `artifacts/` when present and falls back to `artifacts_lite/`.
 Force the lite copy locally with `RADAR_LITE=1`.
+
+## The deployed model
+
+`models/radar_hgb.joblib` is the model the app uses on the **Score accounts** page: the same
+HistGradientBoosting setup as the evaluation, trained on all campaigns (re-train with
+`python -m radar.deploy`). Users can score the 300 sample accounts, upload their own CSV in
+the released-features format (`models/template.csv`), or score one account from the dataset;
+results can be downloaded. The leave-one-campaign-out run is how it was evaluated; this saved
+model is how it is used. Keep scikit-learn at the pinned version or re-train after upgrading.
