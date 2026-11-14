@@ -183,7 +183,7 @@ MANUAL_COLS = ["tweet", "reply", "account", "reply_time", "followers", "followin
 
 
 def _blank(n: int = 6) -> pd.DataFrame:
-    return pd.DataFrame({c: pd.Series([None] * n, dtype="string") for c in MANUAL_COLS})
+    return pd.DataFrame({c: [""] * n for c in MANUAL_COLS})
 
 
 def manual_entry() -> None:
@@ -202,7 +202,7 @@ def manual_entry() -> None:
     a, b = st.columns(2)
     if a.button("Fill with an example (3 tweets, 85 replies)", width="stretch", key="man_ex"):
         ex = pd.read_csv(MODELS / "example_manual.csv", dtype=str)
-        ss["manual_df"] = ex.reindex(columns=MANUAL_COLS).astype("string")
+        ss["manual_df"] = ex.reindex(columns=MANUAL_COLS).fillna("")
         ss["manual_v"] += 1
         ss["manual_example"] = True
         st.rerun()
@@ -228,7 +228,8 @@ def manual_entry() -> None:
     n = st.select_slider("Accounts to list", [25, 50, 100, 200], value=100, key="man_n")
     if not st.button("Check these replies", type="primary", width="stretch", key="man_go"):
         return
-    df = edited.replace({"": None}).dropna(how="all")
+    df = edited.astype(str).apply(lambda c: c.str.strip()).replace({"": None, "None": None, "nan": None, "<NA>": None})
+    df = df.dropna(how="all")
     if df.empty:
         st.error("The table is empty — paste at least the tweet link and a few reply links.")
         return
