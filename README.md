@@ -76,7 +76,21 @@ A tool for someone investigating a reply attack, in three steps along the top ba
 3. **Report** — summary, list of suspicious accounts and groups, downloadable HTML report and CSV.
    On dataset campaigns you can also check your decisions against the accounts Twitter removed.
 
-**About** explains the model and shows its evaluation on campaigns it never saw.
+Two upload formats:
+* **Simple replies file (recommended)** — one row per reply: `account_id`, `tweet_id`, `reply_time`, and
+  optionally `account_created_at`, `followers`, `following`, `reply_text` (X export names such as
+  `author_id`, `in_reply_to_tweet_id`, `created_at`, `text` also work). Template: `models/simple_template.csv`;
+  sample: `models/simple_sample.csv` (every reply to 30 tweets of the Honduras operation).
+  Scored by the **simple-input model** (`src/radar/simple.py`, `models/radar_simple.joblib`), built only from
+  features that can be rebuilt exactly from such a file: reply-delay statistics (checked: identical to the
+  released ones on 99.99 % of accounts), account age (within about half a day), followers, following, reply
+  counts and the co-reply network. Leave-one-campaign-out mean PR-AUC **0.188** — weaker than the full model
+  (0.536), because text similarity (LaBSE embeddings of every reply) and the activity ratios cannot be
+  rebuilt from a plain file. Reply text is used by a separate, transparent rule that flags near-copies of
+  another account's reply to the same tweet (TF-IDF character n-grams). Re-train: `python -m radar.simple`.
+* **Dataset format** — the 76 released features per account (`models/template.csv`), scored by the full model.
+
+**About** explains both models and shows their evaluation on campaigns they never saw.
 
 * `app/core/store.py` — data (full artifacts, or the lite copy when hosted). No UI.
 * `app/core/review.py` — queue, reasons, decisions. No UI.

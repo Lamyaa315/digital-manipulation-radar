@@ -59,8 +59,7 @@ class Investigation:
         return open_[0]
 
     def decisions_table(self) -> pd.DataFrame:
-        q = self.queue.reset_index().rename(columns={"index": "account_id"})
-        q = q.rename(columns={q.columns[0]: "account_id"})
+        q = self.queue.rename_axis(None).reset_index(names="account_id")
         q["decision"] = q["decision"].map(lambda d: DECISIONS.get(d, "Not reviewed"))
         return q[["rank", "account_id", "account", "score", "group", "decision", "note", "reasons"]]
 

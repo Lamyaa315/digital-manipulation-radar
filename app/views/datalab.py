@@ -76,6 +76,25 @@ def render(store: Store) -> None:
             fig.update_layout(height=260, title="Permutation importance (drop in PR-AUC)")
             st.plotly_chart(fig, width="stretch")
 
+    section("", "Simple-input model", "used for plain replies files")
+    import json
+    from app.core.store import ROOT
+    mp = ROOT / "models" / "radar_simple.json"
+    if mp.exists():
+        sm = json.loads(mp.read_text())
+        st.markdown("Built only from what a plain replies file contains: reply timing (9 statistics), account age, "
+                    "followers, following, number of replies and tweets, and the co-reply network. Text similarity "
+                    "and the activity ratios of the full model cannot be rebuilt exactly from such a file, so they "
+                    "are left out — and the model is weaker. Same leave-one-campaign-out test:")
+        sdf = pd.DataFrame(sm["loco"])
+        sdf["campaign"] = sdf["held_out"].map(lambda c: S.PRETTY.get(c, c))
+        st.dataframe(sdf[["campaign", "n_pos", "pr_auc", "roc_auc", "precision_at_100"]], hide_index=True,
+                     width="stretch", column_config={"pr_auc": st.column_config.NumberColumn("PR-AUC", format="%.3f"),
+                                                     "roc_auc": st.column_config.NumberColumn("ROC-AUC", format="%.3f"),
+                                                     "precision_at_100": st.column_config.NumberColumn("precision@100", format="%.2f")})
+        st.caption(f"Mean PR-AUC {sm['loco_mean_pr_auc']:.3f} (full model: 0.536). Reply text, when given, is "
+                   "checked by a separate rule that flags near-copies of other accounts' replies to the same tweet.")
+
     section("", "Analysis settings")
     html(f'<p class="idline">co-reply link: ≥ <b>3</b> shared attacked tweets · case = Louvain community '
          f'(resolution <b>{S.LOUVAIN_RESOLUTION}</b>) with ≥ <b>{S.CASE_MIN_SIZE}</b> accounts · '

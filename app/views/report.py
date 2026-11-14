@@ -44,7 +44,7 @@ def render(store: Store) -> None:
     done, total = inv.progress()
     susp = q[q["decision"] == "suspicious"].sort_values("rank")
     html(f'<p class="lead">{escape(inv.name)} · scores by '
-         f'{"a model that never saw this campaign" if inv.source == "dataset" else "the deployed model"}</p>')
+         f'{ {"dataset": "a model that never saw this campaign", "upload": "the full deployed model", "simple": "the simple-input model"}[inv.source] }</p>')
     figures([(f"{done}/{total}", "reviewed", "", ""),
              (f"{len(susp)}", "suspicious", "coral", ""),
              (f"{int((q['decision'] == 'normal').sum())}", "looks normal", "green", ""),
