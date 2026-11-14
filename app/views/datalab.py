@@ -11,7 +11,18 @@ from app.ui.blocks import compact, figures, html, legend, section, tag
 
 def render(store: Store) -> None:
     info = store.info
-    html('<h1 class="page-title">Data and model</h1>')
+    html('<h1 class="page-title">About</h1>'
+         '<p class="lead">How the tool works, what it was trained on, and how well it does on campaigns it never saw.</p>')
+    st.markdown("""
+**How it works**
+1. **Score** — a machine-learning model (gradient-boosted trees) looks at 76 numbers per account: how similar
+   its replies are to each other, how fast it replies, its profile (age, followers, activity),
+   hashtags/mentions/links and engagement. It gives each account a score from 0 to 1.
+2. **Group** — accounts that reply to the same tweets again and again are linked; tightly linked accounts
+   form a group.
+3. **Review** — you go through the accounts from the highest score down, see why each was flagged, and decide.
+4. **Report** — your decisions become a report you can download and share.
+""")
     if info["is_sample"]:
         st.error("SYNTHETIC SAMPLE DATA — the pipeline ran on generated data. Every number is meaningless.")
 

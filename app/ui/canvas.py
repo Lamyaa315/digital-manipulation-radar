@@ -13,10 +13,10 @@ CSS = """
 .wrap { position:relative; width:100%; user-select:none; overflow:hidden; }
 canvas { display:block; width:100%; cursor:grab; }
 canvas.drag { cursor:grabbing; }
-.tip { position:absolute; pointer-events:none; background:rgba(9,11,16,.94); border:1px solid #43D9E8;
-  color:#E8EDF3; font:11px/1.5 'JetBrains Mono',monospace; padding:8px 10px; letter-spacing:.04em;
+.tip { position:absolute; pointer-events:none; background:rgba(255,255,255,.97); border:1px solid #0E7C86; box-shadow:0 4px 14px rgba(0,0,0,.08);
+  color:#1D2433; font:12px/1.5 Inter,sans-serif; padding:8px 10px; letter-spacing:.04em;
   opacity:0; transition:opacity .12s; white-space:nowrap; z-index:2; }
-.tip b { color:#43D9E8; font-weight:500; } .tip .c { color:#FF626D; }
+.tip b { color:#0E7C86; font-weight:500; } .tip .c { color:#D64550; }
 .hud { position:absolute; left:10px; bottom:8px; font:12px Inter,sans-serif; color:#87919F; pointer-events:none; }
 .hud i { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 5px 0 12px; vertical-align:-1px; }
 """
@@ -45,8 +45,8 @@ export default function(component) {
   if (S.sig !== sig) { S.sig = sig; S.view = { k: 1, tx: 0, ty: 0 }; S.sel = data.selected_node || null;
                        S.grp = data.selected_group || null; S.moved = {}; }
   else { if (data.selected_group !== undefined) S.grp = data.selected_group || S.grp; }
-  hud.innerHTML = (data.caption || '') + '<i style="background:#FF626D"></i>above review threshold' +
-                  '<i style="background:#7C8AA0"></i>below' + '<i style="background:#43D9E8"></i>selected links';
+  hud.innerHTML = (data.caption || '') + '<i style="background:#D64550"></i>above review threshold' +
+                  '<i style="background:#7C8AA0"></i>below' + '<i style="background:#0E7C86"></i>selected links';
 
   // world bounds -> fit
   const qs = (a, q) => { const s = [...a].sort((p, r) => p - r); return s[Math.min(s.length - 1, Math.max(0, Math.floor(q * (s.length - 1))))] || 0; };
@@ -87,8 +87,8 @@ export default function(component) {
       const cross = l.a.group !== l.b.group;
       let a = cross ? 0.025 : 0.12 + 0.3 * (l.s / maxS);
       let col = '124,138,160';
-      if (sel) { a = inSel ? 0.85 : 0.025; if (inSel) col = '67,217,232'; }
-      else if (grp) { a = inGrp ? 0.10 + 0.4 * (l.s / maxS) : 0.025; if (inGrp) col = '67,217,232'; }
+      if (sel) { a = inSel ? 0.85 : 0.025; if (inSel) col = '14,124,134'; }
+      else if (grp) { a = inGrp ? 0.10 + 0.4 * (l.s / maxS) : 0.025; if (inGrp) col = '14,124,134'; }
       ctx.strokeStyle = `rgba(${col},${a})`; ctx.lineWidth = inSel ? 1.4 : 0.6;
       const pa = P[l.a.i], pb = P[l.b.i];
       ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
@@ -99,7 +99,7 @@ export default function(component) {
       g.forEach(n => { gx += P[n.i][0]; gy += P[n.i][1]; }); gx /= g.length; gy /= g.length;
       const ds = g.map(n => Math.hypot(P[n.i][0] - gx, P[n.i][1] - gy)).sort((p, q) => p - q);
       const r = ds[Math.floor(ds.length * 0.85)] || 0;
-      ctx.strokeStyle = 'rgba(67,217,232,.35)'; ctx.setLineDash([2, 5]);
+      ctx.strokeStyle = 'rgba(14,124,134,.35)'; ctx.setLineDash([2, 5]);
       ctx.beginPath(); ctx.arc(gx, gy, r + 10, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
     }
     // nodes
@@ -108,10 +108,10 @@ export default function(component) {
       const [x, y] = P[n.i]; let r = rad(n);
       let dim = (sel && !neigh.has(n)) || (!sel && grp && n.group !== grp);
       ctx.globalAlpha = dim ? 0.18 : 1;
-      ctx.fillStyle = n.flag ? '#FF626D' : '#7C8AA0';
+      ctx.fillStyle = n.flag ? '#D64550' : '#7C8AA0';
       ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
-      if (n === sel) { ctx.strokeStyle = '#43D9E8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 6.283); ctx.stroke(); }
-      else if (sel && neigh.has(n)) { ctx.strokeStyle = 'rgba(67,217,232,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke(); }
+      if (n === sel) { ctx.strokeStyle = '#0E7C86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 6.283); ctx.stroke(); }
+      else if (sel && neigh.has(n)) { ctx.strokeStyle = 'rgba(14,124,134,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke(); }
     }
     ctx.globalAlpha = 1;
     // group labels
@@ -120,7 +120,7 @@ export default function(component) {
       for (const g in groups) {
         let gx = 0, top = Infinity; groups[g].forEach(n => { gx += P[n.i][0]; top = Math.min(top, P[n.i][1]); });
         gx /= groups[g].length;
-        ctx.fillStyle = g === grp ? '#43D9E8' : 'rgba(135,145,159,.8)';
+        ctx.fillStyle = g === grp ? '#0E7C86' : 'rgba(135,145,159,.8)';
         ctx.fillText((data.group_labels && data.group_labels[g]) || g, gx, top - 10);
       }
     }
@@ -211,20 +211,20 @@ export default function(component) {
       const hot = g.id === hoverG;
       ctx.strokeStyle = 'rgba(135,145,159,.12)'; ctx.beginPath(); ctx.moveTo(x, y);
       ctx.lineTo(...polar(g.a0, 1.02)); ctx.stroke();
-      if (hot) { ctx.fillStyle = 'rgba(67,217,232,.06)'; ctx.beginPath(); ctx.moveTo(x, y);
+      if (hot) { ctx.fillStyle = 'rgba(14,124,134,.06)'; ctx.beginPath(); ctx.moveTo(x, y);
         ctx.arc(x, y, r, g.a0, g.a1); ctx.closePath(); ctx.fill(); }
       const am = (g.a0 + g.a1) / 2, [lx, ly] = polar(am, 1.09);
-      ctx.fillStyle = hot ? '#43D9E8' : (g.score >= 0.7 ? '#FF626D' : 'rgba(135,145,159,.85)');
+      ctx.fillStyle = hot ? '#0E7C86' : (g.score >= 0.7 ? '#D64550' : 'rgba(135,145,159,.85)');
       ctx.textAlign = 'center'; ctx.font = '10px JetBrains Mono, monospace';
       const sweptG = turns >= 1 || ((am + 1.5708 + 6.283) % 6.283) < ((sweep + 1.5708 + 6.283) % 6.283);
       if (sweptG) ctx.fillText(g.label, lx, ly + 3);
     });
     // sweep wedge
     const grad = (!done && ctx.createConicGradient) ? ctx.createConicGradient(sweep - 0.9, x, y) : null;
-    if (grad) { grad.addColorStop(0, 'rgba(67,217,232,0)'); grad.addColorStop(0.143, 'rgba(67,217,232,.22)');
-      grad.addColorStop(0.1431, 'rgba(67,217,232,0)'); ctx.fillStyle = grad;
+    if (grad) { grad.addColorStop(0, 'rgba(14,124,134,0)'); grad.addColorStop(0.143, 'rgba(14,124,134,.22)');
+      grad.addColorStop(0.1431, 'rgba(14,124,134,0)'); ctx.fillStyle = grad;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, sweep - 0.9, sweep); ctx.closePath(); ctx.fill(); }
-    if (!done) { ctx.strokeStyle = 'rgba(67,217,232,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
+    if (!done) { ctx.strokeStyle = 'rgba(14,124,134,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
       ctx.lineTo(...polar(sweep, 1)); ctx.stroke(); }
     // blips
     for (const b of blips) {
@@ -236,14 +236,14 @@ export default function(component) {
       const [bx, by] = polar(b.a, b.r);
       const g = hoverG && b.group !== hoverG;
       ctx.globalAlpha = g ? 0.15 : 0.35 + 0.65 * fresh;
-      ctx.fillStyle = b.flag ? '#FF626D' : '#9AA7B8';
+      ctx.fillStyle = b.flag ? '#D64550' : '#9AA7B8';
       ctx.beginPath(); ctx.arc(bx, by, b.flag ? 2.6 : 1.8, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
     }
     ctx.globalAlpha = 1;
     // centre readout
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(9,11,16,.82)'; ctx.beginPath(); ctx.arc(x, y, Math.min(70, r * 0.3), 0, 6.283); ctx.fill();
-    ctx.strokeStyle = 'rgba(67,217,232,.25)'; ctx.stroke();
+    ctx.strokeStyle = 'rgba(14,124,134,.25)'; ctx.stroke();
     if (!blips.length) {
       ctx.fillStyle = 'rgba(135,145,159,.9)'; ctx.font = '13px Inter, sans-serif';
       (data.idle || 'Not analysed yet').split(' — ').forEach((s, i) => ctx.fillText(s, x, y - 2 + i * 14));
@@ -253,7 +253,7 @@ export default function(component) {
       ctx.fillStyle = '#87919F'; ctx.font = '9px JetBrains Mono, monospace';
       ctx.fillText('click a slice', x, y + 22);
     } else {
-      ctx.fillStyle = '#43D9E8'; ctx.font = '10px JetBrains Mono, monospace';
+      ctx.fillStyle = '#0E7C86'; ctx.font = '10px JetBrains Mono, monospace';
       ctx.fillText('scanning…', x, y + 4);
     }
     S.raf = requestAnimationFrame(draw);
