@@ -38,7 +38,7 @@ python scripts/make_sample_data.py
 PYTHONPATH=src python -m radar.pipeline --sample
 ```
 
-Real data (about 880 MB download; the pipeline takes about 5 minutes and needs ~8 GB RAM):
+Real data (about 880 MB download; the pipeline takes about 5 minutes; the app then uses about 1.3 GB of RAM):
 
 ```bash
 python scripts/download_data.py
@@ -84,3 +84,15 @@ Network Explorer, Activity Timeline (one attacked tweet replayed in real time), 
   text, and scoring live X accounts.
 
 The older analyst dashboard is still available: `streamlit run app/streamlit_app.py`.
+
+## Hosted lite version
+
+`artifacts_lite/` (about 50 MB, committed) is a small copy of the artifacts for free hosting,
+built with `python scripts/make_lite.py`. It keeps every account's score, every co-reply link,
+every reply time and the tweet texts; the 76 features are kept only for accounts in the
+co-reply network or above the threshold (used by the "how unusual" chart). Community detection
+is run offline with the same code and seed, so the groups are identical to a local run
+(checked: same 44 groups for Honduras, Saudi Arabia and Turkey). Peak memory: 0.7 GB vs 1.3 GB.
+
+The app uses the full `artifacts/` when present and falls back to `artifacts_lite/`.
+Force the lite copy locally with `RADAR_LITE=1`.

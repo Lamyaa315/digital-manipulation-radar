@@ -25,8 +25,10 @@ from app.views.common import PAGES, campaign, pretty  # noqa: E402
 
 theme.apply()
 
-if not (A / "run_info.json").exists():
-    st.error("No artifacts yet. Run `python -m radar.pipeline` first.")
+SRC = Store.source()
+if SRC is None:
+    st.error("No artifacts yet. Run `python -m radar.pipeline` first "
+             "(or `python scripts/make_lite.py` to build the small hosted copy).")
     st.stop()
 
 
@@ -36,7 +38,7 @@ def get_store(stamp: float) -> Store:
 
 
 with st.spinner("Loading 794k accounts and 2.6M replies…"):
-    store = get_store((A / "run_info.json").stat().st_mtime)
+    store = get_store((SRC / "run_info.json").stat().st_mtime)
 
 if "_goto" in st.session_state:
     st.session_state["nav"] = st.session_state.pop("_goto")
@@ -56,6 +58,9 @@ with st.sidebar:
          f'{" · case " + st.session_state["case_id"] if st.session_state.get("case_id") else ""}</div>')
     if store.info["is_sample"]:
         st.error("SYNTHETIC DATA")
+    if store.lite:
+        html('<div class="notice" style="margin-top:14px">HOSTED LITE VERSION — same scores, links and '
+             'groups as the full run; groups were detected offline with the same code.</div>')
     html('<div class="notice" style="margin-top:30px">Scores rank accounts for human review. '
          'They are not proof of fake accounts or intent.</div>')
 
