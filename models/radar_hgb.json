@@ -78,13 +78,14 @@
     "iqr_cosine",
     "entropy_cosine"
   ],
-  "threshold": 0.461303649843297,
+  "threshold": 0.45775516563811236,
   "trained_on": "all campaigns",
-  "n_train": 84370,
-  "n_pos": 7670,
+  "n_train": 80047,
+  "n_pos": 7277,
+  "excluded_example_accounts": 1948,
   "neg_per_pos": 10,
   "sklearn": "1.9.0",
-  "trained_at": "2026-11-14T00:37:52+00:00",
+  "trained_at": "2026-11-14T02:28:08+00:00",
   "is_sample": false,
   "note": "Threshold picked on a 10:1 sample; on real data, where IO accounts are far rarer, most accounts above it are false alarms. Use the score to rank for review."
 }

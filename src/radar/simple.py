@@ -135,9 +135,22 @@ def evaluate(t: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def example_accounts() -> set:
+    """Accounts in the example files shipped with the app. They are kept out of training so the
+    examples are an honest test on accounts the model never saw."""
+    ids = set()
+    for f, col in (("simple_sample.csv", "account_id"), ("sample_accounts.csv", C.COL_USER)):
+        p = C.ROOT / "models" / f
+        if p.exists():
+            ids |= set(pd.read_csv(p, usecols=[col])[col].astype("int64"))
+    return ids
+
+
 def train_and_save() -> dict:
     t = training_table()
     ev = evaluate(t)
+    held = example_accounts()
+    t = t[~t.index.isin(held)]
     y = t[C.COL_LABEL].to_numpy()
     idx = downsample(np.arange(len(t)), y, C.NEG_PER_POS_TRAIN, np.random.default_rng(C.RANDOM_STATE))
     model, thr = fit_with_threshold("hgb", t.iloc[idx][FEATURES], y[idx])
@@ -147,7 +160,7 @@ def train_and_save() -> dict:
     MODEL_FILE.parent.mkdir(exist_ok=True)
     joblib.dump(model, MODEL_FILE, compress=3)
     meta = {"model": "HistGradientBoostingClassifier (simple inputs)", "features": FEATURES, "threshold": thr,
-            "n_train": int(len(idx)), "n_pos": int(y[idx].sum()),
+            "n_train": int(len(idx)), "n_pos": int(y[idx].sum()), "excluded_example_accounts": len(held),
             "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "normal_median": normal.median().round(6).to_dict(), "normal_spread": spread.round(6).to_dict(),
             "loco": ev.round(4).to_dict(orient="records"),

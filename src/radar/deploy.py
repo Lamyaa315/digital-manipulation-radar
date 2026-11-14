@@ -30,6 +30,9 @@ META_FILE = MODEL_DIR / "radar_hgb.json"
 
 def train(sample: bool = False) -> dict:
     df = load_features(data_dir(sample))
+    from .simple import example_accounts
+    held = example_accounts()
+    df = df[~df[C.COL_USER].isin(held)].reset_index(drop=True)   # keep the app's examples unseen
     cols = feature_columns(df)
     y = df[C.COL_LABEL].to_numpy()
     rng = np.random.default_rng(C.RANDOM_STATE)
@@ -40,6 +43,7 @@ def train(sample: bool = False) -> dict:
     meta = {
         "model": "HistGradientBoostingClassifier", "features": cols, "threshold": thr,
         "trained_on": "all campaigns", "n_train": int(len(idx)), "n_pos": int(y[idx].sum()),
+        "excluded_example_accounts": len(held),
         "neg_per_pos": C.NEG_PER_POS_TRAIN, "sklearn": sklearn.__version__,
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "is_sample": sample,
         "note": "Threshold picked on a 10:1 sample; on real data, where IO accounts are far rarer, "
