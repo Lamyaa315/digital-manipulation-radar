@@ -1,12 +1,12 @@
-"""Digital Manipulation Radar — the investigation app.
+"""Digital Manipulation Radar — a review tool for coordinated reply accounts.
 
     streamlit run app/main.py
 
-Reads the artifacts written by `python -m radar.pipeline`. Layout:
-    app/core/store.py   data + analysis (no UI)
-    app/ui/             theme, HTML blocks, canvas components (network, radar)
-    app/views/          one module per page
-The older analyst dashboard is still at app/streamlit_app.py.
+Flow: 1 Upload (a demo campaign or your own files) → 2 Review (ranked accounts, reasons,
+decisions) → 3 Report (summary + downloads). About explains the model and its evaluation.
+    app/core/store.py    data (full artifacts, or the lite copy when hosted)
+    app/core/review.py   queue, reasons, decisions (no UI)
+    app/views/           one module per step
 """
 import sys
 from pathlib import Path
@@ -14,14 +14,14 @@ from pathlib import Path
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-st.set_page_config(page_title="Digital Manipulation Radar", page_icon="◉", layout="wide",
-                   initial_sidebar_state="expanded")
+st.set_page_config(page_title="Digital Manipulation Radar", page_icon="◎", layout="wide",
+                   initial_sidebar_state="collapsed")
 
-from app.core.store import A, Store  # noqa: E402
+from app.core.store import Store  # noqa: E402
 from app.ui import theme  # noqa: E402
 from app.ui.blocks import html  # noqa: E402
-from app.views import datalab, explorer, investigations, room, score, timeline  # noqa: E402
-from app.views.common import PAGES, campaign, pretty  # noqa: E402
+from app.views import datalab, report, review, upload  # noqa: E402
+from app.views.common import PAGES  # noqa: E402
 
 theme.apply()
 
@@ -37,32 +37,29 @@ def get_store(stamp: float) -> Store:
     return Store.load()
 
 
-with st.spinner("Loading 794k accounts and 2.6M replies…"):
+with st.spinner("Loading the data…"):
     store = get_store((SRC / "run_info.json").stat().st_mtime)
 
 if "_goto" in st.session_state:
     st.session_state["nav"] = st.session_state.pop("_goto")
+if not st.session_state.get("nav"):          # clicking the active tab again clears it
+    st.session_state["nav"] = st.session_state.get("_page", PAGES[0])
 
-with st.sidebar:
-    html('<div style="display:flex;align-items:center;gap:10px;margin:4px 0 26px">'
-         '<svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="12" fill="none" stroke="#43D9E8" stroke-opacity=".5"/>'
-         '<circle cx="13" cy="13" r="7" fill="none" stroke="#43D9E8" stroke-opacity=".3"/>'
-         '<path d="M13 13 L13 1" stroke="#43D9E8" stroke-width="1.5"/><circle cx="18" cy="8" r="2" fill="#FF626D"/></svg>'
-         '<div><div style="font-family:Space Grotesk;font-weight:600;line-height:1">Manipulation Radar</div>'
-         '<div class="kicker" style="margin:2px 0 0">coordinated-account finder</div></div></div>')
-    page = st.radio("Navigate", PAGES, key="nav", label_visibility="collapsed")
-    ran = campaign() in store._cases
-    html(f'<div style="margin-top:30px" class="kicker">Campaign</div>'
-         f'<div style="font-size:14px">{pretty(campaign())}</div>'
-         f'<div class="idline" style="margin-top:4px">{"analysed" if ran else "not analysed yet"}'
-         f'{" · case " + st.session_state["case_id"] if st.session_state.get("case_id") else ""}</div>')
-    if store.info["is_sample"]:
-        st.error("SYNTHETIC DATA")
-    if store.lite:
-        html('<div class="notice" style="margin-top:14px">Hosted lite version: same scores and groups as '
-             'the full run (groups detected offline with the same code).</div>')
-    html('<div class="notice" style="margin-top:30px">Scores rank accounts for human review. '
-         'They are not proof of fake accounts or intent.</div>')
+brand, nav = st.columns([2, 3], vertical_alignment="center")
+with brand:
+    html('<div class="brand"><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" '
+         'fill="none" stroke="#0E7C86" stroke-width="1.6"/><circle cx="12" cy="12" r="6" fill="none" stroke="#0E7C86" '
+         'stroke-opacity=".45" stroke-width="1.4"/><circle cx="16.5" cy="7.5" r="2.2" fill="#D64550"/></svg>'
+         'Manipulation Radar<small>find accounts that work together</small></div>')
+with nav:
+    page = st.segmented_control("Navigate", PAGES, key="nav", label_visibility="collapsed")
+page = page or st.session_state.get("_page", PAGES[0])
+st.session_state["_page"] = page
+st.divider()
 
-{PAGES[0]: room, PAGES[1]: score, PAGES[2]: investigations, PAGES[3]: explorer,
- PAGES[4]: timeline, PAGES[5]: datalab}[page].render(store)
+{PAGES[0]: upload, PAGES[1]: review, PAGES[2]: report, PAGES[3]: datalab}[page].render(store)
+
+foot = "Scores rank accounts for human review. They are not proof of fake accounts or intent."
+if store.lite:
+    foot += " Hosted lite version: same scores and groups as the full run."
+st.caption(foot)

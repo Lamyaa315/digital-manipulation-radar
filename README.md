@@ -60,24 +60,27 @@ streamlit run app/streamlit_app.py
 
 On Windows PowerShell set the path with `$env:PYTHONPATH = "src"` instead of the `PYTHONPATH=src` prefix.
 
-## The investigation app (new interface)
+## The review tool (main app)
 
 ```
 streamlit run app/main.py
 ```
 
-Five pages: Radar Room (pick a campaign → INITIATE INVESTIGATION runs co-reply community
-detection live, then the radar and the living network show the results), Investigations
-(case list + case workspace: overview, network, evidence, timeline, account dossier),
-Network Explorer, Activity Timeline (one attacked tweet replayed in real time), Data Lab.
+A tool for someone investigating a reply attack, in three steps along the top bar:
 
-* `app/core/store.py` — data and analysis, no UI. Swap in a new model by re-running
-  `python -m radar.pipeline`; the app reads only `artifacts/`.
-* `app/ui/` — theme, HTML blocks, and two canvas components (`st.components.v2`, no build
-  step, no CDN): the network (zoom, pan, drag, hover, click → Python) and the radar.
-* `app/views/` — one module per page.
-* Every number carries a tag: MODEL (held-out prediction), FEATURE (released by the dataset),
-  RULE (computed here), DATASET, N/A (not in the data), TRUTH (known label, hidden by default).
+1. **Upload** — pick a campaign from the dataset (demo) or upload your own accounts file
+   (`models/template.csv` format) plus an optional replies file (account id, tweet id).
+2. **Review** — accounts ranked by the model, each with plain-language reasons and its group of
+   accounts that reply to the same tweets. Mark each one Suspicious / Looks normal / Unsure, add a
+   note, or mark a whole group at once.
+3. **Report** — summary, list of suspicious accounts and groups, downloadable HTML report and CSV.
+   On dataset campaigns you can also check your decisions against the accounts Twitter removed.
+
+**About** explains the model and shows its evaluation on campaigns it never saw.
+
+* `app/core/store.py` — data (full artifacts, or the lite copy when hosted). No UI.
+* `app/core/review.py` — queue, reasons, decisions. No UI.
+* `app/views/` — upload, review, report, about (datalab.py).
 * Reply times are real: tweet IDs encode their posting time. The dataset's `diff_min` column
   is the reply delay in **hours, rounded up** (not minutes) — checked against these times.
 * Not possible with this data: shared-URL detection (only URL counts are released), reply
@@ -99,9 +102,8 @@ Force the lite copy locally with `RADAR_LITE=1`.
 
 ## The deployed model
 
-`models/radar_hgb.joblib` is the model the app uses on the **Score accounts** page: the same
+`models/radar_hgb.joblib` is the model the app uses for uploaded files: the same
 HistGradientBoosting setup as the evaluation, trained on all campaigns (re-train with
-`python -m radar.deploy`). Users can score the 300 sample accounts, upload their own CSV in
-the released-features format (`models/template.csv`), or score one account from the dataset;
-results can be downloaded. The leave-one-campaign-out run is how it was evaluated; this saved
+`python -m radar.deploy`). `models/sample_accounts.csv` and `models/sample_replies.csv` are
+the sample files behind "Try the sample files". The leave-one-campaign-out run is how it was evaluated; this saved
 model is how it is used. Keep scikit-learn at the pinned version or re-train after upgrading.
