@@ -147,10 +147,14 @@ def dossier(store: Store, uid, key: str) -> None:
     with c2:
         html(f'<p class="kicker">How unusual, by feature group {tag("FEATURE")}</p>')
         z = store.unusual(uid)
-        fig = go.Figure(go.Bar(x=z.values, y=z.index, orientation="h",
-                               marker_color=[T.CORAL if v > 2 else T.STEEL for v in z.values]))
-        fig.update_layout(height=210, xaxis_title="distance from typical normal accounts (robust z)")
-        st.plotly_chart(fig, width="stretch", key=f"{key}-z")
+        if z is None:
+            st.caption("Not included in the hosted lite version (kept only for accounts in the co-reply "
+                       "network or above the threshold). Run the app locally with the full data to see it.")
+        else:
+            fig = go.Figure(go.Bar(x=z.values, y=z.index, orientation="h",
+                                   marker_color=[T.CORAL if v > 2 else T.STEEL for v in z.values]))
+            fig.update_layout(height=210, xaxis_title="distance from typical normal accounts (robust z)")
+            st.plotly_chart(fig, width="stretch", key=f"{key}-z")
     html(f'<p class="kicker">Replies on attacked tweets {tag("DATASET")} '
          f'· shared URLs {tag("NA")} · reply text {tag("NA")}</p>')
     show = rep.assign(when=rep["t"].dt.strftime("%Y-%m-%d %H:%M"),

@@ -16,6 +16,7 @@ timestamps on 96 % of replies.)
 from __future__ import annotations
 
 import json
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,6 +31,10 @@ from radar import config as C  # noqa: E402
 from radar.data import feature_group  # noqa: E402
 
 A = C.ARTIFACTS_DIR
+LITE = ROOT / "artifacts_lite"   # small copy of the artifacts for free hosting (scripts/make_lite.py)
+LITE_ACC_COLS = [C.COL_LABEL, "campaign_group", "community", "score", "graph_degree", "graph_strength",
+                 "graph_community_size", "max_cosine", "mean_cosine", "mean_num_url", "50%_num_url",
+                 "age", "activity_rate"]
 MAIN_SET = "behavior (all released features)"
 TWEPOCH_MS = 1288834974657
 CASE_MIN_SIZE = 5
@@ -79,25 +84,76 @@ class Store:
     baseline: pd.Series        # medians over accounts with >= 2 target replies (label-free)
     baseline_cos: pd.Series    # sample of their max_cosine, for the box plot
     _cases: dict = field(default_factory=dict)
+    fx: pd.DataFrame | None = None       # feature table for the "how unusual" chart
+    ns: dict | None = None               # precomputed normal-account stats (lite mode)
+    groups: pd.DataFrame | None = None   # precomputed Louvain groups (lite mode)
+    lite: bool = False
+
+    @staticmethod
+    def source() -> Path | None:
+        """Full artifacts if present (local runs), else the lite copy (hosted app).
+        Set RADAR_LITE=1 to force the lite copy locally."""
+        if os.environ.get("RADAR_LITE") and (LITE / "accounts.parquet").exists():
+            return LITE
+        if (A / "accounts.pkl").exists():
+            return A
+        if (LITE / "accounts.parquet").exists():
+            return LITE
+        return None
 
     # -- loading -----------------------------------------------------------------------
     @classmethod
     def load(cls) -> "Store":
+        return cls._load_full() if cls.source() == A else cls._load_lite()
+
+    @staticmethod
+    def _prep_acc(acc: pd.DataFrame, metrics: pd.DataFrame, info: dict):
+        best = info["best_model"]
+        thr = metrics.query("model == @best and feature_set == @MAIN_SET").set_index("held_out")["threshold"]
+        acc["flagged"] = acc["score"] >= acc["campaign_group"].map(thr)
+        acc["rank"] = acc.groupby("campaign_group")["score"].rank(ascending=False, method="min")
+        return acc, thr
+
+    @staticmethod
+    def _prep_replies(r: pd.DataFrame) -> pd.DataFrame:
+        r["t"] = snowflake_time(r[C.COL_REPLY]).to_numpy()
+        r["t_post"] = snowflake_time(r[C.COL_TWEET]).to_numpy()
+        r["delay_min"] = ((r["t"] - r["t_post"]).dt.total_seconds() / 60).astype("float32")
+        return r.sort_values([C.COL_TWEET, "t"]).reset_index(drop=True)
+
+    @classmethod
+    def _finish(cls, info, acc, edges, r, metrics, imp, texts, thr, **kw) -> "Store":
+        feats = list(info["feature_columns"])
+        key = ["max_cosine", "mean_cosine", "mean_num_url", "age", "activity_rate"]
+        active = r.groupby(C.COL_USER).size()
+        active = acc.index.intersection(active.index[active >= 2])
+        return cls(info, acc, edges, r, metrics, imp, texts, thr, feats, acc.loc[active, key].median(),
+                   acc.loc[active, "max_cosine"].sample(20000, random_state=1), **kw)
+
+    @classmethod
+    def _load_lite(cls) -> "Store":
+        L = LITE
+        info = json.loads((L / "run_info.json").read_text())
+        metrics = pd.read_csv(L / "metrics.csv")
+        acc, thr = cls._prep_acc(pd.read_parquet(L / "accounts.parquet"), metrics, info)
+        r = cls._prep_replies(pd.read_parquet(L / "replies.parquet"))
+        t = pd.read_parquet(L / "texts.parquet")
+        ns = pd.read_parquet(L / "normal_stats.parquet")
+        imp = pd.read_csv(L / "importance.csv") if (L / "importance.csv").exists() else None
+        return cls._finish(info, acc, pd.read_parquet(L / "edges.parquet"), r, metrics, imp,
+                           t.set_index("tweetid")["english_text"], thr,
+                           fx=pd.read_parquet(L / "features.parquet"),
+                           ns={"med": ns["med"], "iqr": ns["iqr"]},
+                           groups=pd.read_parquet(L / "groups.parquet"), lite=True)
+
+    @classmethod
+    def _load_full(cls) -> "Store":
         info = json.loads((A / "run_info.json").read_text())
         acc = pd.read_pickle(A / "accounts.pkl")
         metrics = pd.read_csv(A / "metrics.csv")
-        best = info["best_model"]
-        thr = metrics.query("model == @best and feature_set == @MAIN_SET").set_index("held_out")["threshold"]
-        acc = acc.set_index(C.COL_USER)
-        acc["flagged"] = acc["score"] >= acc["campaign_group"].map(thr)
-        acc["rank"] = acc.groupby("campaign_group")["score"].rank(ascending=False, method="min")
-
+        acc, thr = cls._prep_acc(acc.set_index(C.COL_USER), metrics, info)
         r = pd.read_pickle(A / "replies.pkl")
-        r = r.loc[r[C.COL_TYPE] == C.TARGET_TYPE, [C.COL_TWEET, C.COL_USER, C.COL_REPLY]]
-        r["t"] = snowflake_time(r[C.COL_REPLY]).to_numpy()
-        r["t_post"] = snowflake_time(r[C.COL_TWEET]).to_numpy()
-        r["delay_min"] = (r["t"] - r["t_post"]).dt.total_seconds() / 60
-        r = r.sort_values([C.COL_TWEET, "t"]).reset_index(drop=True)
+        r = cls._prep_replies(r.loc[r[C.COL_TYPE] == C.TARGET_TYPE, [C.COL_TWEET, C.COL_USER, C.COL_REPLY]].copy())
 
         texts = pd.Series(dtype=str)
         p = C.RAW_DIR / C.TEXT_FILE
@@ -109,13 +165,34 @@ class Store:
             t = t[ok].assign(tweetid=ids[ok].map(int).astype("int64"))
             texts = t.drop_duplicates("tweetid").set_index("tweetid")["english_text"]
 
-        feats = [c for c in info["feature_columns"] if c in acc.columns]
-        key = ["max_cosine", "mean_cosine", "mean_num_url", "age", "activity_rate"]
-        active = r.groupby(C.COL_USER).size()
-        active = acc.index.intersection(active.index[active >= 2])
         imp = pd.read_csv(A / "importance.csv") if (A / "importance.csv").exists() else None
-        return cls(info, acc, pd.read_pickle(A / "edges.pkl"), r, metrics, imp, texts, thr,
-                   feats, acc.loc[active, key].median(), acc.loc[active, "max_cosine"].sample(20000, random_state=1))
+        return cls._finish(info, acc, pd.read_pickle(A / "edges.pkl"), r, metrics, imp, texts, thr, fx=acc)
+
+    # -- lite copy -------------------------------------------------------------------------
+    def save_lite(self, out: Path = LITE) -> None:
+        """Write the small copy used by the hosted app. Same scores, same links, same groups."""
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "run_info.json").write_text(json.dumps(self.info, indent=2))
+        self.metrics.to_csv(out / "metrics.csv", index=False)
+        if self.imp is not None:
+            self.imp.to_csv(out / "importance.csv", index=False)
+        acc = self.acc[LITE_ACC_COLS].copy()
+        for c in acc.select_dtypes("float64").columns:
+            acc[c] = acc[c].astype("float32")
+        acc.to_parquet(out / "accounts.parquet")
+        detail = self.acc["community"].notna() | self.acc["flagged"]
+        self.acc.loc[detail, self.feats].astype("float32").to_parquet(out / "features.parquet")
+        ns = self._normal_stats()
+        pd.DataFrame({"med": ns["med"], "iqr": ns["iqr"]}).to_parquet(out / "normal_stats.parquet")
+        self.replies[[C.COL_TWEET, C.COL_USER, C.COL_REPLY]].to_parquet(out / "replies.parquet")
+        self.edges.astype({"shared": "int16"}).to_parquet(out / "edges.parquet")
+        tw = set(self.replies[C.COL_TWEET].unique())
+        self.texts[self.texts.index.isin(tw)].rename_axis("tweetid").reset_index().to_parquet(out / "texts.parquet")
+        rows = []
+        for camp in self.acc["campaign_group"].unique():
+            for gid, ids in enumerate(self._louvain(camp)[1]):
+                rows.append(pd.DataFrame({"campaign": camp, "gid": gid, "uid": ids}))
+        pd.concat(rows).to_parquet(out / "groups.parquet")
 
     # -- datasets ------------------------------------------------------------------------
     def campaigns(self) -> pd.DataFrame:
@@ -146,15 +223,15 @@ class Store:
         if campaign in self._cases:
             return self._cases[campaign]
         say = progress or (lambda *_: None)
-        members = self.acc.index[self.acc["campaign_group"] == campaign]
-        say(0.1, f"Selecting the co-reply links among {len(members):,} accounts")
-        e = self.edges[self.edges["u"].isin(members) & self.edges["v"].isin(members)]
-        say(0.3, f"Building the co-reply network ({len(e):,} links)")
-        g = nx.from_pandas_edgelist(e, "u", "v", "shared")
-        say(0.45, "Detecting communities (Louvain)")
-        comms = nx.community.louvain_communities(g, weight="shared", seed=C.RANDOM_STATE,
-                                                 resolution=LOUVAIN_RESOLUTION)
-        comms = [sorted(c) for c in comms if len(c) >= CASE_MIN_SIZE]
+        if self.groups is not None:   # lite mode: Louvain was run offline with this same code
+            members = self.acc.index[self.acc["campaign_group"] == campaign]
+            say(0.2, f"Selecting the co-reply links among {len(members):,} accounts")
+            e = self.edges[self.edges["u"].isin(members) & self.edges["v"].isin(members)]
+            say(0.5, "Loading the communities found offline (hosted lite mode)")
+            g = self.groups[self.groups["campaign"] == campaign]
+            comms = [sorted(x) for _, x in g.groupby("gid")["uid"]]
+        else:
+            e, comms = self._louvain(campaign, say)
         say(0.75, f"Measuring evidence for {len(comms)} groups")
         rows = []
         for c in comms:
@@ -170,6 +247,17 @@ class Store:
         self._cases[campaign] = cases
         say(1.0, "Done")
         return cases
+
+    def _louvain(self, campaign: str, say=lambda *_: None):
+        members = self.acc.index[self.acc["campaign_group"] == campaign]
+        say(0.1, f"Selecting the co-reply links among {len(members):,} accounts")
+        e = self.edges[self.edges["u"].isin(members) & self.edges["v"].isin(members)]
+        say(0.3, f"Building the co-reply network ({len(e):,} links)")
+        g = nx.from_pandas_edgelist(e, "u", "v", "shared")
+        say(0.45, "Detecting communities (Louvain)")
+        comms = nx.community.louvain_communities(g, weight="shared", seed=C.RANDOM_STATE,
+                                                 resolution=LOUVAIN_RESOLUTION)
+        return e, [sorted(c) for c in comms if len(c) >= CASE_MIN_SIZE]
 
     def _summarise(self, ids: list, e: pd.DataFrame) -> dict:
         a = self.acc.loc[ids]
@@ -261,13 +349,17 @@ class Store:
     def unusual(self, uid) -> pd.Series:
         """Robust distance from typical normal accounts, averaged per feature group.
         Describes the account (FEATURE); it is not the model's internal reasoning."""
+        if uid not in self.fx.index:
+            return None
         normal = self._normal_stats()
-        z = (self.acc.loc[uid, self.feats].astype(float) - normal["med"]) / normal["iqr"]
+        z = (self.fx.loc[uid, self.feats].astype(float) - normal["med"]) / normal["iqr"]
         z = z.clip(-50, 50)
         return (z.abs().rename("z").to_frame().assign(group=[feature_group(f) for f in self.feats])
                 .groupby("group")["z"].mean().sort_values())
 
     def _normal_stats(self):
+        if self.ns is not None:
+            return self.ns
         if not hasattr(self, "_ns"):
             n = self.acc.loc[self.acc[C.COL_LABEL] == 0, self.feats]
             spread = (n.quantile(.75) - n.quantile(.25))
