@@ -81,8 +81,11 @@ def simple_upload() -> None:
                "Needed: `account_id`, `tweet_id` (the tweet being replied to), `reply_time`. "
                "Helpful: `account_created_at`, `followers`, `following`, `reply_text`. "
                "Common X column names (author_id, in_reply_to_tweet_id, created_at, text) work too.")
-    st.download_button("Download the template", (MODELS / "simple_template.csv").read_bytes(),
+    d1, d2 = st.columns(2)
+    d1.download_button("Empty template", (MODELS / "simple_template.csv").read_bytes(),
                        "radar_replies_template.csv", "text/csv", width="stretch", key="dl_simple")
+    d2.download_button("Filled example (2,256 replies)", (MODELS / "simple_sample.csv").read_bytes(),
+                       "radar_replies_example.csv", "text/csv", width="stretch", key="dl_simple_ex")
     f = st.file_uploader("Replies file (CSV)", type="csv", key="up_simple")
     n = st.select_slider("Accounts to review", [25, 50, 100, 200], value=100, key="up_n_simple")
     a, b = st.columns(2)
@@ -122,8 +125,11 @@ def full_upload(store: Store) -> None:
     st.caption(f"**Accounts file** (required): one row per account, the {len(sc.features)} feature columns "
                "of the released dataset. **Replies file** (optional): two columns — account id, tweet id — "
                "used to find groups of accounts that reply to the same tweets.")
-    st.download_button("Download the accounts template", (MODELS / "template.csv").read_bytes(),
+    d1, d2 = st.columns(2)
+    d1.download_button("Empty template", (MODELS / "template.csv").read_bytes(),
                        "radar_accounts_template.csv", "text/csv", width="stretch")
+    d2.download_button("Filled example (300 accounts)", (MODELS / "sample_accounts.csv").read_bytes(),
+                       "radar_accounts_example.csv", "text/csv", width="stretch", key="dl_full_ex")
     f_acc = st.file_uploader("Accounts file (CSV)", type="csv", key="up_acc")
     f_rep = st.file_uploader("Replies file (CSV, optional)", type="csv", key="up_rep")
     n2 = st.select_slider("Accounts to review", [25, 50, 100, 200], value=100, key="up_n_up")
