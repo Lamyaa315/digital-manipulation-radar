@@ -38,7 +38,7 @@ def render(store: Store) -> None:
         if c2.button("Continue →", type="primary", width="stretch"):
             goto(2)
 
-    left, right = st.columns(2, gap="large")
+    left, right = st.columns([2, 3], gap="large")
     with left:
         with st.container(border=True):
             st.markdown("#### Use a campaign from the dataset")
@@ -55,8 +55,10 @@ def render(store: Store) -> None:
 
     with right:
         with st.container(border=True):
-            st.markdown("#### Upload your own data")
-            simple_tab, full_tab = st.tabs(["Simple replies file (recommended)", "Dataset format (76 features)"])
+            st.markdown("#### Use your own data")
+            manual_tab, simple_tab, full_tab = st.tabs(["Type it in", "Replies file", "Dataset format (76 features)"])
+            with manual_tab:
+                manual_entry()
             with simple_tab:
                 simple_upload()
             with full_tab:
@@ -175,3 +177,74 @@ def full_upload(store: Store) -> None:
                                  "Sample upload (300 accounts, dataset format)" if go_sample else f_acc.name, n2))
     if go_sample is False:
         st.caption("The sample: 300 real accounts (30 known IO) and their 787 replies.")
+
+
+MANUAL_COLS = ["tweet", "reply", "account", "reply_time", "followers", "following", "account_created_at", "reply_text"]
+
+
+def _blank(n: int = 6) -> pd.DataFrame:
+    return pd.DataFrame({c: pd.Series([None] * n, dtype="string") for c in MANUAL_COLS})
+
+
+def manual_entry() -> None:
+    """Type or paste replies straight into a table — no file needed."""
+    from app.core import simple_input as SI
+    sc = simple_scorer()
+    if sc is None:
+        st.error("No simple model. Run `python -m radar.simple` first.")
+        return
+    ss = st.session_state
+    if "manual_df" not in ss:
+        ss["manual_df"], ss["manual_v"], ss["manual_example"] = _blank(), 0, False
+    st.caption("One row per **reply**. Fastest: paste the link of the tweet and the link of each reply "
+               "(on X: Share → Copy link). The account and the times are read from the links. "
+               "Or type the account and the reply time yourself. The other columns are optional but help.")
+    a, b = st.columns(2)
+    if a.button("Fill with an example (3 tweets, 85 replies)", width="stretch", key="man_ex"):
+        ex = pd.read_csv(MODELS / "example_manual.csv", dtype=str)
+        ss["manual_df"] = ex.reindex(columns=MANUAL_COLS).astype("string")
+        ss["manual_v"] += 1
+        ss["manual_example"] = True
+        st.rerun()
+    if b.button("Clear the table", width="stretch", key="man_clear"):
+        ss["manual_df"], ss["manual_example"] = _blank(), False
+        ss["manual_v"] += 1
+        st.rerun()
+    edited = st.data_editor(
+        ss["manual_df"], num_rows="dynamic", width="stretch", height=300, key=f"manual_{ss['manual_v']}",
+        column_config={
+            "tweet": st.column_config.TextColumn("tweet (link or ID)", required=True,
+                                                 help="The tweet being replied to, e.g. https://x.com/name/status/18…"),
+            "reply": st.column_config.TextColumn("reply (link)", help="Link of the reply — gives account and time"),
+            "account": st.column_config.TextColumn("account", help="@handle or ID; filled from the reply link if empty"),
+            "reply_time": st.column_config.TextColumn("reply time", help="Only if there is no reply link, e.g. 2025-11-14 10:30"),
+            "followers": st.column_config.TextColumn("followers"),
+            "following": st.column_config.TextColumn("following"),
+            "account_created_at": st.column_config.TextColumn("account created", help="e.g. 2025-10-01"),
+            "reply_text": st.column_config.TextColumn("reply text", help="Used to spot near-copies"),
+        })
+    ids = st.text_input("Check specific accounts (optional)", key="man_focus",
+                        placeholder="@handles or IDs, separated by commas — shown first in the results")
+    n = st.select_slider("Accounts to list", [25, 50, 100, 200], value=100, key="man_n")
+    if not st.button("Check these replies", type="primary", width="stretch", key="man_go"):
+        return
+    df = edited.replace({"": None}).dropna(how="all")
+    if df.empty:
+        st.error("The table is empty — paste at least the tweet link and a few reply links.")
+        return
+    r, errors, notes = SI.parse(pd.DataFrame(df))
+    for e in errors:
+        st.error(e)
+    if errors:
+        return
+    for m in notes:
+        st.info(m)
+    labels = None
+    if ss.get("manual_example"):
+        labels = pd.read_csv(MODELS / "simple_sample_labels.csv", dtype={"account_id": str}).set_index("account_id")["label"]
+    focus = [x.lstrip("@").lower() for x in SI.parse_ids(ids)]
+    accs = {a.lstrip("@").lower(): a for a in r["account"]}
+    focus = [accs.get(x, x) for x in focus]
+    with st.spinner("Scoring the accounts…"):
+        _start(SI.build(r, sc, "Typed in" + (" (example)" if ss.get("manual_example") else ""), n, labels, focus=focus))
+
