@@ -63,9 +63,18 @@ class Scorer:
         return MODEL_FILE.exists() and META_FILE.exists()
 
     def check(self, df: pd.DataFrame) -> tuple[list[str], list[str]]:
-        """(missing feature columns, non-numeric feature columns)."""
+        """(missing feature columns, columns with text that is not a number). Converts number-like
+        text (e.g. "0,5") in place; empty cells are allowed."""
         missing = [c for c in self.features if c not in df.columns]
-        bad = [c for c in self.features if c in df.columns and not pd.api.types.is_numeric_dtype(df[c])]
+        bad = []
+        for c in self.features:
+            if c in df.columns and not pd.api.types.is_numeric_dtype(df[c]):
+                raw = df[c].astype(str).str.strip().str.replace(",", ".", regex=False)
+                num = pd.to_numeric(raw.replace({"": None, "nan": None}), errors="coerce")
+                if (num.isna() & df[c].notna() & (raw != "")).any():
+                    bad.append(c)
+                else:
+                    df[c] = num
         return missing, bad
 
     def score(self, df: pd.DataFrame) -> np.ndarray:

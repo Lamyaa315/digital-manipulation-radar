@@ -138,13 +138,18 @@ def full_upload(store: Store) -> None:
         except Exception as e:  # noqa: BLE001 - show any parse error to the user
             st.error(f"Could not read the file: {e}")
             return
+        if acc.dropna(how="all").empty:
+            st.error("The file has column names but no rows. The template is empty on purpose: add one row per "
+                     "account (or press “Try the sample files” to see a filled-in example).")
+            return
         missing, bad = sc.check(acc)
         if missing:
             st.error(f"{len(missing)} required columns are missing (e.g. {', '.join(missing[:4])}). "
                      "Use the template.")
             return
         if bad:
-            st.error(f"These columns must contain numbers: {', '.join(bad[:4])}")
+            st.error(f"These columns contain text that is not a number: {', '.join(bad[:4])}"
+                     + (f" (+{len(bad) - 4} more)" if len(bad) > 4 else ""))
             return
         if rep is not None and rep.shape[1] < 2:
             st.error("The replies file needs two columns: account id, tweet id.")
