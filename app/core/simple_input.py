@@ -25,10 +25,12 @@ ALIASES = {
     "account": ["account_id", "author_id", "user_id", "userid", "account", "user", "username", "user_name",
                 "screen_name", "handle", "author", "replier_userid", "replier_id"],
     "tweet": ["tweet_id", "in_reply_to_tweet_id", "in_reply_to_status_id", "in_reply_to_id", "target_tweet_id",
-              "replied_to_id", "conversation_id", "parent_id", "tweet", "poster_tweetid", "original_tweet_id"],
+              "replied_to_id", "conversation_id", "parent_id", "tweet", "poster_tweetid", "original_tweet_id",
+              "tweet_url", "tweet_link", "original_tweet"],
     "reply_time": ["reply_time", "reply_created_at", "reply_date", "created_at", "posted_at", "datetime", "date_time",
                    "timestamp", "timestamp_utc", "time_utc", "time", "date"],
-    "reply_id": ["reply_id", "reply_tweet_id", "id", "tweet_id_reply", "replier_tweetid"],
+    "reply_id": ["reply_id", "reply_tweet_id", "id", "tweet_id_reply", "replier_tweetid", "reply_url", "reply_link",
+                 "reply"],
     "tweet_time": ["tweet_time", "tweet_created_at", "tweet_date", "target_time", "target_created_at",
                    "original_tweet_time", "parent_created_at"],
     "created": ["account_created_at", "user_created_at", "author_created_at", "account_created", "joined"],
@@ -74,9 +76,36 @@ def _snow(series) -> pd.Series:
     return out
 
 
+URL_RE = r"(?:x|twitter)\.com/([^/?#\s]+)/status(?:es)?/(\d+)"
+
+
+def from_links(df: pd.DataFrame) -> pd.DataFrame:
+    """Turn X/Twitter links into IDs. A reply link also gives the replying account's handle,
+    and every real ID carries its posting time, so links alone are enough."""
+    df = df.copy()
+    for c in df.columns:
+        s = df[c].astype(str)
+        m = s.str.extract(URL_RE)
+        if m[1].notna().sum() == 0 or m[1].notna().mean() < 0.5:
+            continue
+        df[c] = m[1].where(m[1].notna(), df[c])
+        n = _norm(c)
+        if n in ALIASES["reply_id"]:
+            handle = ("@" + m[0]).where(~m[0].isin(["i", "web"]) & m[0].notna())
+            acc = _pick(df, "account")
+            if acc is None:
+                if handle.notna().any():
+                    df["account_id"] = handle
+            else:                                   # fill blank account cells from the link
+                blank = acc.isna() | (acc.astype(str).str.strip().isin(["", "nan", "None", "<NA>"]))
+                df.loc[blank, acc.name] = handle[blank]
+    return df
+
+
 def parse(df: pd.DataFrame) -> tuple[pd.DataFrame | None, list[str], list[str]]:
     """-> (normalised replies, errors, notes)."""
     errors, notes = [], []
+    df = from_links(df)
     if df.dropna(how="all").empty:
         return None, ["The file has column names but no rows. Add one row per reply "
                       "(download the example file to see what goes in it)."], notes
