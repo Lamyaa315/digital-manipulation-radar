@@ -38,7 +38,7 @@ def render(store: Store) -> None:
     if inv is None:
         st.info("No investigation yet.")
         if st.button("Start one →", type="primary"):
-            goto(0)
+            goto(1)
         return
     q = inv.queue
     done, total = inv.progress()
@@ -53,7 +53,7 @@ def render(store: Store) -> None:
     if done == 0:
         st.info("Nothing reviewed yet. Go to Review and mark a few accounts.")
         if st.button("Go to review →", type="primary"):
-            goto(1)
+            goto(2)
         return
 
     groups = []

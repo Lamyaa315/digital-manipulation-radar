@@ -29,7 +29,7 @@ def render(store: Store) -> None:
         html('<h1 class="page-title">Review</h1>')
         st.info("No investigation yet.")
         if st.button("Start one →", type="primary"):
-            goto(0)
+            goto(1)
         return
     q = inv.queue
     done, total = inv.progress()
@@ -38,7 +38,7 @@ def render(store: Store) -> None:
     top_l, top_r = st.columns([3, 1])
     top_l.markdown(f'<h1 class="page-title">Review — {escape(inv.name)}</h1>', unsafe_allow_html=True)
     if top_r.button("Go to report →", width="stretch", type="primary" if done == total else "secondary"):
-        goto(2)
+        goto(3)
     st.progress(done / max(total, 1), text=f"{done} of {total} reviewed · "
                 f"{counts.get('suspicious', 0)} suspicious · {counts.get('normal', 0)} normal · "
                 f"{counts.get('unsure', 0)} unsure")
