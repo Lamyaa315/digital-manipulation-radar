@@ -13,11 +13,11 @@ CSS = """
 .wrap { position:relative; width:100%; user-select:none; overflow:hidden; }
 canvas { display:block; width:100%; cursor:grab; }
 canvas.drag { cursor:grabbing; }
-.tip { position:absolute; pointer-events:none; background:rgba(255,255,255,.97); border:1px solid #0E7C86; box-shadow:0 4px 14px rgba(0,0,0,.08);
-  color:#1D2433; font:12px/1.5 Inter,sans-serif; padding:8px 10px; letter-spacing:.04em;
+.tip { position:absolute; pointer-events:none; background:rgba(8,8,10,.96); border:1px solid #C6F432;
+  color:#F2F2F0; font:11.5px/1.55 'JetBrains Mono',monospace; padding:8px 10px; letter-spacing:.04em;
   opacity:0; transition:opacity .12s; white-space:nowrap; z-index:2; }
-.tip b { color:#0E7C86; font-weight:500; } .tip .c { color:#D64550; }
-.hud { position:absolute; left:10px; bottom:8px; font:12px Inter,sans-serif; color:#87919F; pointer-events:none; }
+.tip b { color:#C6F432; font-weight:500; } .tip .c { color:#C6F432; }
+.hud { position:absolute; left:10px; bottom:8px; font:10.5px 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:#8B8D93; pointer-events:none; }
 .hud i { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 5px 0 12px; vertical-align:-1px; }
 """
 
@@ -45,8 +45,8 @@ export default function(component) {
   if (S.sig !== sig) { S.sig = sig; S.view = { k: 1, tx: 0, ty: 0 }; S.sel = data.selected_node || null;
                        S.grp = data.selected_group || null; S.moved = {}; }
   else { if (data.selected_group !== undefined) S.grp = data.selected_group || S.grp; }
-  hud.innerHTML = (data.caption || '') + '<i style="background:#D64550"></i>above review threshold' +
-                  '<i style="background:#7C8AA0"></i>below' + '<i style="background:#0E7C86"></i>selected links';
+  hud.innerHTML = (data.caption || '') + '<i style="background:#C6F432"></i>above review threshold' +
+                  '<i style="background:#55585F"></i>below' + '<i style="background:#F2F2F0"></i>selected links';
 
   // world bounds -> fit
   const qs = (a, q) => { const s = [...a].sort((p, r) => p - r); return s[Math.min(s.length - 1, Math.max(0, Math.floor(q * (s.length - 1))))] || 0; };
@@ -67,7 +67,12 @@ export default function(component) {
   const sy = n => (n.y - cy + (S.moved[n.id] ? S.moved[n.id][1] : 0)) * fit * V().k + H / 2 + V().ty;
   const rad = n => Math.min(7, 2.2 + Math.sqrt(n.deg) * 0.32) * Math.sqrt(V().k);
   let T = 0;
-  function px(n) { return [sx(n), sy(n)]; }
+  const ROT = data.rotate || 0;
+  function px(n) {
+    if (!ROT) return [sx(n), sy(n)];
+    const a = T * ROT, cxs = W / 2 + V().tx, cys = H / 2 + V().ty, dx = sx(n) - cxs, dy = sy(n) - cys;
+    return [cxs + dx * Math.cos(a) - dy * Math.sin(a), cys + dx * Math.sin(a) + dy * Math.cos(a)];
+  }
 
   function hit(mx, my) {
     let best = null, bd = 144;
@@ -86,9 +91,9 @@ export default function(component) {
       const inGrp = grp && l.a.group === grp && l.b.group === grp;
       const cross = l.a.group !== l.b.group;
       let a = cross ? 0.025 : 0.12 + 0.3 * (l.s / maxS);
-      let col = '124,138,160';
-      if (sel) { a = inSel ? 0.85 : 0.025; if (inSel) col = '14,124,134'; }
-      else if (grp) { a = inGrp ? 0.10 + 0.4 * (l.s / maxS) : 0.025; if (inGrp) col = '14,124,134'; }
+      let col = '170,174,182';
+      if (sel) { a = inSel ? 0.85 : 0.025; if (inSel) col = '198,244,50'; }
+      else if (grp) { a = inGrp ? 0.10 + 0.4 * (l.s / maxS) : 0.025; if (inGrp) col = '198,244,50'; }
       ctx.strokeStyle = `rgba(${col},${a})`; ctx.lineWidth = inSel ? 1.4 : 0.6;
       const pa = P[l.a.i], pb = P[l.b.i];
       ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
@@ -99,7 +104,7 @@ export default function(component) {
       g.forEach(n => { gx += P[n.i][0]; gy += P[n.i][1]; }); gx /= g.length; gy /= g.length;
       const ds = g.map(n => Math.hypot(P[n.i][0] - gx, P[n.i][1] - gy)).sort((p, q) => p - q);
       const r = ds[Math.floor(ds.length * 0.85)] || 0;
-      ctx.strokeStyle = 'rgba(14,124,134,.35)'; ctx.setLineDash([2, 5]);
+      ctx.strokeStyle = 'rgba(198,244,50,.35)'; ctx.setLineDash([2, 5]);
       ctx.beginPath(); ctx.arc(gx, gy, r + 10, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
     }
     // nodes
@@ -108,10 +113,10 @@ export default function(component) {
       const [x, y] = P[n.i]; let r = rad(n);
       let dim = (sel && !neigh.has(n)) || (!sel && grp && n.group !== grp);
       ctx.globalAlpha = dim ? 0.18 : 1;
-      ctx.fillStyle = n.flag ? '#D64550' : '#7C8AA0';
+      ctx.fillStyle = n.flag ? '#C6F432' : '#55585F';
       ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
-      if (n === sel) { ctx.strokeStyle = '#0E7C86'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 6.283); ctx.stroke(); }
-      else if (sel && neigh.has(n)) { ctx.strokeStyle = 'rgba(14,124,134,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke(); }
+      if (n === sel) { ctx.strokeStyle = '#F2F2F0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 6.283); ctx.stroke(); }
+      else if (sel && neigh.has(n)) { ctx.strokeStyle = 'rgba(198,244,50,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke(); }
     }
     ctx.globalAlpha = 1;
     // group labels
@@ -120,7 +125,7 @@ export default function(component) {
       for (const g in groups) {
         let gx = 0, top = Infinity; groups[g].forEach(n => { gx += P[n.i][0]; top = Math.min(top, P[n.i][1]); });
         gx /= groups[g].length;
-        ctx.fillStyle = g === grp ? '#0E7C86' : 'rgba(135,145,159,.8)';
+        ctx.fillStyle = g === grp ? '#F2F2F0' : 'rgba(139,141,147,.8)';
         ctx.fillText((data.group_labels && data.group_labels[g]) || g, gx, top - 10);
       }
     }
@@ -201,30 +206,30 @@ export default function(component) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     const [x, y] = C(), r = R();
     // rings
-    ctx.strokeStyle = 'rgba(135,145,159,.18)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(139,141,147,.18)'; ctx.lineWidth = 1;
     [0.25, 0.5, 0.75, 1].forEach(q => { ctx.beginPath(); ctx.arc(x, y, r * q, 0, 6.283); ctx.stroke(); });
     ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); ctx.stroke();
-    ctx.font = '9px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(135,145,159,.7)'; ctx.textAlign = 'left';
+    ctx.font = '9px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(139,141,147,.7)'; ctx.textAlign = 'left';
     [[0.25, '0.75'], [0.5, '0.50'], [0.75, '0.25']].forEach(([q, s]) => ctx.fillText('score ' + s, x + 4, y - r * q - 3));
     // sectors
     groups.forEach(g => {
       const hot = g.id === hoverG;
-      ctx.strokeStyle = 'rgba(135,145,159,.12)'; ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.strokeStyle = 'rgba(139,141,147,.12)'; ctx.beginPath(); ctx.moveTo(x, y);
       ctx.lineTo(...polar(g.a0, 1.02)); ctx.stroke();
-      if (hot) { ctx.fillStyle = 'rgba(14,124,134,.06)'; ctx.beginPath(); ctx.moveTo(x, y);
+      if (hot) { ctx.fillStyle = 'rgba(198,244,50,.06)'; ctx.beginPath(); ctx.moveTo(x, y);
         ctx.arc(x, y, r, g.a0, g.a1); ctx.closePath(); ctx.fill(); }
       const am = (g.a0 + g.a1) / 2, [lx, ly] = polar(am, 1.09);
-      ctx.fillStyle = hot ? '#0E7C86' : (g.score >= 0.7 ? '#D64550' : 'rgba(135,145,159,.85)');
+      ctx.fillStyle = hot ? '#F2F2F0' : (g.score >= 0.7 ? '#C6F432' : 'rgba(139,141,147,.85)');
       ctx.textAlign = 'center'; ctx.font = '10px JetBrains Mono, monospace';
       const sweptG = turns >= 1 || ((am + 1.5708 + 6.283) % 6.283) < ((sweep + 1.5708 + 6.283) % 6.283);
       if (sweptG) ctx.fillText(g.label, lx, ly + 3);
     });
     // sweep wedge
     const grad = (!done && ctx.createConicGradient) ? ctx.createConicGradient(sweep - 0.9, x, y) : null;
-    if (grad) { grad.addColorStop(0, 'rgba(14,124,134,0)'); grad.addColorStop(0.143, 'rgba(14,124,134,.22)');
-      grad.addColorStop(0.1431, 'rgba(14,124,134,0)'); ctx.fillStyle = grad;
+    if (grad) { grad.addColorStop(0, 'rgba(198,244,50,0)'); grad.addColorStop(0.143, 'rgba(198,244,50,.22)');
+      grad.addColorStop(0.1431, 'rgba(198,244,50,0)'); ctx.fillStyle = grad;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, sweep - 0.9, sweep); ctx.closePath(); ctx.fill(); }
-    if (!done) { ctx.strokeStyle = 'rgba(14,124,134,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
+    if (!done) { ctx.strokeStyle = 'rgba(198,244,50,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y);
       ctx.lineTo(...polar(sweep, 1)); ctx.stroke(); }
     // blips
     for (const b of blips) {
@@ -236,16 +241,16 @@ export default function(component) {
       const [bx, by] = polar(b.a, b.r);
       const g = hoverG && b.group !== hoverG;
       ctx.globalAlpha = g ? 0.15 : 0.35 + 0.65 * fresh;
-      ctx.fillStyle = b.flag ? '#D64550' : '#9AA7B8';
+      ctx.fillStyle = b.flag ? '#C6F432' : '#6B6E75';
       ctx.beginPath(); ctx.arc(bx, by, b.flag ? 2.6 : 1.8, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
     }
     ctx.globalAlpha = 1;
     // centre readout
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(9,11,16,.82)'; ctx.beginPath(); ctx.arc(x, y, Math.min(70, r * 0.3), 0, 6.283); ctx.fill();
-    ctx.strokeStyle = 'rgba(14,124,134,.25)'; ctx.stroke();
+    ctx.strokeStyle = 'rgba(198,244,50,.25)'; ctx.stroke();
     if (!blips.length) {
-      ctx.fillStyle = 'rgba(135,145,159,.9)'; ctx.font = '13px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(139,141,147,.9)'; ctx.font = '13px Inter, sans-serif';
       (data.idle || 'Not analysed yet').split(' — ').forEach((s, i) => ctx.fillText(s, x, y - 2 + i * 14));
     } else if (turns >= 1) {
       ctx.fillStyle = '#E8EDF3'; ctx.font = '600 22px Space Grotesk, sans-serif';
@@ -253,7 +258,7 @@ export default function(component) {
       ctx.fillStyle = '#87919F'; ctx.font = '9px JetBrains Mono, monospace';
       ctx.fillText('click a slice', x, y + 22);
     } else {
-      ctx.fillStyle = '#0E7C86'; ctx.font = '10px JetBrains Mono, monospace';
+      ctx.fillStyle = '#F2F2F0'; ctx.font = '10px JetBrains Mono, monospace';
       ctx.fillText('scanning…', x, y + 4);
     }
     S.raf = requestAnimationFrame(draw);
@@ -282,9 +287,9 @@ _net = st.components.v2.component("radar_network", css=CSS, js=NET_JS)
 _radar = st.components.v2.component("radar_scope", css=CSS, js=RADAR_JS)
 
 
-def network(payload: dict, key: str, height: int = 560, selected_group=None, caption: str = "",
+def network(payload: dict, key: str, height: int = 560, selected_group=None, caption: str = "", rotate: float = 0,
             group_labels: dict | None = None, lock_group: bool = False):
-    data = {**payload, "height": height, "selected_group": selected_group, "caption": caption,
+    data = {**payload, "height": height, "selected_group": selected_group, "caption": caption, "rotate": rotate,
             "group_labels": group_labels or {}, "lock_group": lock_group}
     res = _net(data=data, key=key, height=height, on_select_change=lambda: None)
     return res.select if res is not None else None

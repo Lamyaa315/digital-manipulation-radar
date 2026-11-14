@@ -22,7 +22,7 @@ def _start(inv: R.Investigation) -> None:
     st.session_state["inv"] = inv
     st.session_state["sel"] = inv.queue.index[0] if len(inv.queue) else None
     st.session_state.pop("_last_click", None)
-    goto(1)
+    goto(2)
 
 
 def render(store: Store) -> None:
@@ -36,7 +36,7 @@ def render(store: Store) -> None:
         c1.markdown(f'<div class="notice">Current investigation: <b>{inv.name}</b> — {done} of {total} reviewed. '
                     'Starting a new one replaces it (download your report first).</div>', unsafe_allow_html=True)
         if c2.button("Continue →", type="primary", width="stretch"):
-            goto(1)
+            goto(2)
 
     left, right = st.columns(2, gap="large")
     with left:
