@@ -22,21 +22,29 @@ from radar import simple as S
 from radar.graph import build_coreply_edges
 
 ALIASES = {
-    "account": ["account_id", "author_id", "user_id", "userid", "account", "username", "screen_name", "replier_userid"],
-    "tweet": ["tweet_id", "in_reply_to_tweet_id", "in_reply_to_status_id", "target_tweet_id", "tweet", "poster_tweetid"],
-    "reply_time": ["reply_time", "created_at", "time", "timestamp", "date"],
-    "reply_id": ["reply_id", "reply_tweet_id", "id", "replier_tweetid"],
-    "tweet_time": ["tweet_time", "target_time"],
-    "created": ["account_created_at", "user_created_at", "author_created_at"],
-    "followers": ["followers", "followers_count"],
+    "account": ["account_id", "author_id", "user_id", "userid", "account", "user", "username", "user_name",
+                "screen_name", "handle", "author", "replier_userid", "replier_id"],
+    "tweet": ["tweet_id", "in_reply_to_tweet_id", "in_reply_to_status_id", "in_reply_to_id", "target_tweet_id",
+              "replied_to_id", "conversation_id", "parent_id", "tweet", "poster_tweetid", "original_tweet_id"],
+    "reply_time": ["reply_time", "reply_created_at", "reply_date", "created_at", "posted_at", "datetime", "date_time",
+                   "timestamp", "timestamp_utc", "time_utc", "time", "date"],
+    "reply_id": ["reply_id", "reply_tweet_id", "id", "tweet_id_reply", "replier_tweetid"],
+    "tweet_time": ["tweet_time", "tweet_created_at", "tweet_date", "target_time", "target_created_at",
+                   "original_tweet_time", "parent_created_at"],
+    "created": ["account_created_at", "user_created_at", "author_created_at", "account_created", "joined"],
+    "followers": ["followers", "followers_count", "follower_count"],
     "following": ["following", "following_count", "friends_count"],
-    "text": ["reply_text", "text", "full_text"],
+    "text": ["reply_text", "text", "full_text", "content", "body"],
 }
 TEMPLATE_COLS = ["account_id", "tweet_id", "reply_time", "account_created_at", "followers", "following", "reply_text"]
 
 
-def _pick(df: pd.DataFrame, key: str):
-    low = {c.lower().strip(): c for c in df.columns}
+def _norm(c: str) -> str:
+    return str(c).strip().lower().replace(" ", "_").replace("-", "_")
+
+
+def _pick(df: pd.DataFrame, key: str, exclude: set | None = None):
+    low = {_norm(c): c for c in df.columns if not exclude or c not in exclude}
     for a in ALIASES[key]:
         if a in low:
             return df[low[a]]
@@ -44,13 +52,23 @@ def _pick(df: pd.DataFrame, key: str):
 
 
 def _ms(series) -> pd.Series:
-    t = pd.to_datetime(series, utc=True, errors="coerce")
+    """Times in any common form -> epoch milliseconds. Numbers are read as epoch seconds or
+    milliseconds by their size; text is parsed per value (mixed formats allowed), day-first
+    tried when that reads more of the values."""
+    num = pd.to_numeric(series, errors="coerce")
+    if num.notna().mean() > 0.9:
+        return num.where(num > 1e11, num * 1000)          # seconds -> ms
+    s = series.astype(str).str.strip()
+    a = pd.to_datetime(s, utc=True, errors="coerce", format="mixed")
+    b = pd.to_datetime(s, utc=True, errors="coerce", format="mixed", dayfirst=True)
+    t = b if b.notna().sum() > a.notna().sum() else a
     return pd.Series((t - pd.Timestamp("1970-01-01", tz="UTC")).dt.total_seconds() * 1000, index=series.index)
 
 
 def _snow(series) -> pd.Series:
+    """Real X/Twitter IDs carry their posting time (snowflake)."""
     n = pd.to_numeric(series, errors="coerce")
-    ok = n > 2 ** 32
+    ok = (n > 2 ** 40) & (n < 2 ** 63)
     out = pd.Series(np.nan, index=series.index)
     out[ok] = (n[ok].astype("int64").to_numpy() >> 22) + S.TWEPOCH_MS
     return out
@@ -59,31 +77,46 @@ def _snow(series) -> pd.Series:
 def parse(df: pd.DataFrame) -> tuple[pd.DataFrame | None, list[str], list[str]]:
     """-> (normalised replies, errors, notes)."""
     errors, notes = [], []
+    if df.dropna(how="all").empty:
+        return None, ["The file has column names but no rows. The template is empty on purpose: add one row "
+                      "per reply (or press “Try the sample” to see a filled-in example)."], notes
+    found = ", ".join(f"`{c}`" for c in df.columns[:15]) or "none"
     acc, tw = _pick(df, "account"), _pick(df, "tweet")
     if acc is None:
         errors.append("No account column (account_id).")
     if tw is None:
         errors.append("No tweet column (tweet_id — the tweet being replied to).")
     if errors:
-        return None, errors, notes
+        return None, errors + [f"Columns found in your file: {found}"], notes
     r = pd.DataFrame({"account": acc.astype(str).str.strip(), "tweet": tw.astype(str).str.strip()})
-    rt, rid = _pick(df, "reply_time"), _pick(df, "reply_id")
-    r["reply_ms"] = _ms(rt) if rt is not None else np.nan
+    used = {acc.name, tw.name}
+    rt, rid = _pick(df, "reply_time", used), _pick(df, "reply_id", used)
+    low = {_norm(c): c for c in df.columns}
+    if "date" in low and "time" in low:                    # separate date and time columns
+        r["reply_ms"] = _ms(df[low["date"]].astype(str) + " " + df[low["time"]].astype(str))
+    else:
+        r["reply_ms"] = _ms(rt) if rt is not None else np.nan
     if rid is not None:
         r["reply_ms"] = r["reply_ms"].fillna(_snow(rid))
-    tt = _pick(df, "tweet_time")
+    tt = _pick(df, "tweet_time", used)
     r["tweet_ms"] = _ms(tt) if tt is not None else np.nan
     r["tweet_ms"] = r["tweet_ms"].fillna(_snow(tw))
     if r["reply_ms"].isna().all():
-        errors.append("No reply times: add reply_time (or reply_id with real tweet IDs).")
-    if r["tweet_ms"].isna().all():
-        errors.append("No time for the replied-to tweets: add tweet_time, or use real tweet IDs in tweet_id.")
-    if errors:
+        errors.append("Could not find when each reply was posted. Add a `reply_time` column "
+                      "(e.g. 2025-11-14 10:30), or a `reply_id` column with real X reply IDs.")
+        errors.append(f"Columns found in your file: {found}")
         return None, errors, notes
+    if r["tweet_ms"].isna().all():
+        first = r.groupby("tweet")["reply_ms"].transform("min")
+        r["tweet_ms"] = first
+        notes.append("No posting time for the replied-to tweets (add `tweet_time`, or use real X tweet IDs). "
+                     "Each tweet's first reply is used instead, so reply delays are approximate.")
     bad = r["reply_ms"].isna() | r["tweet_ms"].isna()
     if bad.any():
-        notes.append(f"{int(bad.sum())} rows without usable times were skipped.")
+        notes.append(f"{int(bad.sum())} of {len(r)} rows have no readable time and were skipped.")
         r = r[~bad]
+    if r.empty:
+        return None, ["No row has a readable time."], notes
     cr = _pick(df, "created")
     created = _ms(cr) if cr is not None else pd.Series(np.nan, index=df.index)
     r["created_ms"] = created.reindex(r.index).fillna(_snow(r["account"]))
