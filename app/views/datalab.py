@@ -11,8 +11,7 @@ from app.ui.blocks import compact, figures, html, legend, section, tag
 
 def render(store: Store) -> None:
     info = store.info
-    html('<p class="kicker"><b>05</b> — DATA LAB</p>'
-         '<div class="hero-title" style="font-size:52px">WHAT THE RADAR <span>KNOWS</span></div>')
+    html('<h1 class="page-title">Data and model</h1>')
     if info["is_sample"]:
         st.error("SYNTHETIC SAMPLE DATA — the pipeline ran on generated data. Every number is meaningless.")
 
@@ -27,7 +26,7 @@ def render(store: Store) -> None:
         (compact(info["n_io"]), "known IO accounts", "", "TRUTH"),
         (compact(info["graph"]["edges"]), "co-reply links", "", "RULE"),
     ])
-    html('<p class="kicker" style="margin-top:18px">WHAT THIS DATA CAN AND CANNOT SHOW</p>')
+    html('<p class="kicker" style="margin-top:18px">What this data can and cannot show</p>')
     st.dataframe(pd.DataFrame([
         ("Reply timing", "yes", "exact UTC times decoded from tweet IDs"),
         ("Common targets", "yes", "who replied to which attacked tweet"),
