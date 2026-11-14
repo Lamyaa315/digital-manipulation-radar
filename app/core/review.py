@@ -33,6 +33,9 @@ class Investigation:
     threshold: float
     labels: pd.Series | None = None     # known labels, evaluation only (dataset source)
     all_scores: pd.Series | None = None # score of every account we know (for group views)
+    n_scored: int = 0                   # accounts the model scored
+    n_above: int = 0                    # of those, above the review threshold
+    campaign: str = ""                  # dataset campaign, if any
     notes: dict = field(default_factory=dict)
 
     # -- decisions -----------------------------------------------------------------------
@@ -127,7 +130,8 @@ def from_campaign(store: Store, campaign: str, n: int = 100) -> Investigation:
     thr = float(store.thresholds.get(campaign, 0.5))
     return Investigation(PRETTY.get(campaign, campaign), "dataset", q, used, feats, e, rep, thr,
                          labels=store.acc.loc[q.index, C.COL_LABEL],
-                         all_scores=store.acc.loc[list(members | set(q.index)), "score"])
+                         all_scores=store.acc.loc[list(members | set(q.index)), "score"],
+                         n_scored=len(acc), n_above=int(acc["flagged"].sum()), campaign=campaign)
 
 
 def from_upload(scorer, ns: dict, feats_df: pd.DataFrame, replies_df: pd.DataFrame | None,
@@ -159,4 +163,5 @@ def from_upload(scorer, ns: dict, feats_df: pd.DataFrame, replies_df: pd.DataFra
     q["decision"], q["note"] = "", ""
     q["reasons"] = [" · ".join(reasons(feats.loc[u], ns, q.at[u, "group"], q.at[u, "group_size"])) for u in q.index]
     used = {g: m for g, m in groups.items() if g in set(q["group"])}
-    return Investigation(name, "upload", q, used, feats.loc[q.index], e, rep, scorer.threshold, all_scores=p)
+    return Investigation(name, "upload", q, used, feats.loc[q.index], e, rep, scorer.threshold, all_scores=p,
+                         n_scored=len(p), n_above=int((p >= scorer.threshold).sum()))

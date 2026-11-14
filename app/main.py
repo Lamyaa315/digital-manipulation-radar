@@ -20,7 +20,7 @@ st.set_page_config(page_title="Digital Manipulation Radar", page_icon="◎", lay
 from app.core.store import Store  # noqa: E402
 from app.ui import theme  # noqa: E402
 from app.ui.blocks import html  # noqa: E402
-from app.views import datalab, home, report, review, upload  # noqa: E402
+from app.views import datalab, home, report, results, review, upload  # noqa: E402
 from app.views.common import PAGES  # noqa: E402
 
 theme.apply()
@@ -45,7 +45,7 @@ if "_goto" in st.session_state:
 if not st.session_state.get("nav"):          # clicking the active tab again clears it
     st.session_state["nav"] = st.session_state.get("_page", PAGES[0])
 
-brand, nav = st.columns([5, 4], vertical_alignment="center")
+brand, nav = st.columns([4, 5], vertical_alignment="center")
 with brand:
     html('<div class="brand"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" '
          'fill="none" stroke="#F2F2F0" stroke-opacity=".5" stroke-width="1"/><circle cx="12" cy="12" r="6" fill="none" '
@@ -57,7 +57,8 @@ page = page or st.session_state.get("_page", PAGES[0])
 st.session_state["_page"] = page
 st.divider()
 
-{PAGES[0]: home, PAGES[1]: upload, PAGES[2]: review, PAGES[3]: report, PAGES[4]: datalab}[page].render(store)
+{PAGES[0]: home, PAGES[1]: upload, PAGES[2]: results, PAGES[3]: review, PAGES[4]: report,
+ PAGES[5]: datalab}[page].render(store)
 
 foot = "Scores rank accounts for human review. They are not proof of fake accounts or intent."
 if store.lite:

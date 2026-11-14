@@ -34,7 +34,7 @@ td,th{{border-bottom:1px solid #E3E6EB;padding:6px 8px;text-align:left;vertical-
 
 def render(store: Store) -> None:
     inv = st.session_state.get("inv")
-    html('<h1 class="page-title">Report</h1>')
+    html('<h1 class="page-title">Your review report</h1>')
     if inv is None:
         st.info("No investigation yet.")
         if st.button("Start one →", type="primary"):
@@ -51,9 +51,13 @@ def render(store: Store) -> None:
              (f"{int((q['decision'] == 'unsure').sum())}", "unsure", "amber", ""),
              (f"{q.loc[susp.index, 'group'].replace('', None).nunique()}", "groups with suspicious accounts", "", "")])
     if done == 0:
-        st.info("Nothing reviewed yet. Go to Review and mark a few accounts.")
-        if st.button("Go to review →", type="primary"):
+        st.info("This report holds your own review decisions, and you have not reviewed any accounts yet. "
+                "The model's results (no review needed) are on the Results page.")
+        c1, c2 = st.columns(2)
+        if c1.button("See the model's results", type="primary", width="stretch"):
             goto(2)
+        if c2.button("Review accounts →", width="stretch"):
+            goto(3)
         return
 
     groups = []

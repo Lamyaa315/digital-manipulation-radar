@@ -63,7 +63,7 @@ def render(store: Store) -> None:
         if a.button("Enter Intelligence Center  →", type="primary", width="stretch"):
             goto(1)
         if b.button("How it works", width="stretch"):
-            goto(4)
+            goto(5)
     with right:
         p = hero_payload(store, HERO_CAMPAIGN)
         canvas.network(p, key="hero-net", height=520, rotate=0.00003,
@@ -110,4 +110,4 @@ def render(store: Store) -> None:
     if c1.button("Enter Intelligence Center  →", type="primary", width="stretch", key="cta2"):
         goto(1)
     if c2.button("About the model", width="stretch", key="cta3"):
-        goto(4)
+        goto(5)
