@@ -5,3 +5,4 @@ scikit-learn==1.9.0  # must match the version that saved models/radar_hgb.joblib
 networkx>=3.2
 streamlit>=1.64  # the new app uses st.components.v2
 plotly>=5.20
+pyarrow>=14,<25  # 26.x has a known segfault (apache/arrow#50471); Streamlit Cloud downgrades it anyway
