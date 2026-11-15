@@ -76,7 +76,7 @@ def render(store: Store) -> None:
             fig.update_layout(height=260, title="Permutation importance (drop in PR-AUC)")
             st.plotly_chart(fig, width="stretch")
     st.caption("Caveat: most of the signal is text similarity. Re-run without the nine similarity features, the mean "
-               "PR-AUC falls from 0.536 to 0.144 (notebooks/01_eda.ipynb, section 6b). The released similarity is "
+               "PR-AUC falls from 0.536 to 0.144 (notebooks/radar_notebook.ipynb, section 7.1). The released similarity is "
                "exactly 0 for 80% of normal accounts but 9% of IO accounts, which looks like 'not computed' rather "
                "than 'different text', so part of this signal may come from how the dataset was built, and results "
                "on freshly collected data could be lower.")

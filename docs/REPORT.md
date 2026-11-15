@@ -5,12 +5,12 @@ Every number comes from a file in the repo:
 
 - `artifacts/metrics.csv` and `artifacts/importance.csv`, written by `python -m radar.pipeline`;
 - `models/*.json`, written when the deployed models are trained;
-- `notebooks/01_eda.ipynb`, the exploratory analysis.
+- `notebooks/radar_notebook.ipynb`, the project notebook (EDA, models, evaluation).
 
 | Step | Where to look |
 |---|---|
 | 1 · Problem definition | this file §1, [PLAN.md §1](PLAN.md) |
-| 2 · EDA | [notebooks/01_eda.ipynb](../notebooks/01_eda.ipynb) |
+| 2 · EDA | [notebooks/radar_notebook.ipynb](../notebooks/radar_notebook.ipynb) §2–3 |
 | 3 · Preprocessing | `src/radar/data.py`, `src/radar/graph.py`, `src/radar/model.py` |
 | 4 · Modeling | `src/radar/model.py`, `src/radar/simple.py` |
 | 5 · Evaluation | [RESULTS.md](RESULTS.md), `artifacts/metrics.csv` |
@@ -56,7 +56,7 @@ Zenodo 10.5281/zenodo.13896308, CC BY 4.0. It contains:
 
 ## 2 · Exploratory data analysis
 
-Full analysis with charts: [notebooks/01_eda.ipynb](../notebooks/01_eda.ipynb). The findings that drove later
+Charts: [notebooks/radar_notebook.ipynb](../notebooks/radar_notebook.ipynb) §2–3, which also shows accuracy, precision, recall and F1 for every model (§6–7). The findings that drove later
 decisions:
 
 | Finding | Number | What it changed |

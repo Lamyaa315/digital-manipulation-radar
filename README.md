@@ -7,8 +7,8 @@ Results mark **possible coordination for human review**, not proof of fake accou
 Data: OSoMe, *Coordinated Reply Attacks in Influence Operations* (Pote et al., ICWSM 2025),
 Zenodo [10.5281/zenodo.13896308](https://doi.org/10.5281/zenodo.13896308), **CC BY 4.0**.
 The plan, verified dataset facts, risks and team schedule are in [docs/PLAN.md](docs/PLAN.md).
-The exploratory data analysis, with charts and the decision each finding led to, is in
-[notebooks/01_eda.ipynb](notebooks/01_eda.ipynb); model results are in [docs/RESULTS.md](docs/RESULTS.md).
+The project notebook — EDA, the three models, accuracy/precision/recall/F1 and model selection — is
+[notebooks/radar_notebook.ipynb](notebooks/radar_notebook.ipynb); model results are in [docs/RESULTS.md](docs/RESULTS.md).
 **The full report — the seven project steps and the reason behind every choice — is [docs/REPORT.md](docs/REPORT.md).**
 
 ## Layout
@@ -23,8 +23,8 @@ app/streamlit_app.py    dashboard (reads artifacts/ only)
 scripts/download_data.py   fetch the dataset (skips the 3.8 GB pickle)
 scripts/inspect_data.py    Day-1 schema check
 scripts/make_sample_data.py  SYNTHETIC data for testing code only
-notebooks/01_eda.ipynb     exploratory data analysis (charts + findings + decisions)
-scripts/build_eda_notebook.py  rebuilds the notebook from code + scripts/eda_text.json
+notebooks/radar_notebook.ipynb  the project notebook: EDA, models, accuracy/precision/recall/F1, selection
+scripts/build_notebook.py  rebuilds the notebook from code + scripts/notebook_text.json
 ```
 
 ## Run
@@ -57,10 +57,10 @@ python scripts/inspect_data.py > docs/DATA_INSPECTION.txt
 PYTHONPATH=src python -m radar.pipeline
 ```
 
-EDA notebook (needs the real data and the pipeline's artifacts; takes a few minutes):
+Project notebook (needs the real data and the pipeline's artifacts; takes a few minutes):
 
 ```bash
-jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/radar_notebook.ipynb
 ```
 
 Dashboard:

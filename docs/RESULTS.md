@@ -52,7 +52,7 @@ reply delay 0.08, engagement 0.02, entities 0.02.
 
 **Without text similarity** (HGB, LOCO, all released features except the nine `*_cosine` ones):
 mean PR-AUC **0.144** (vs 0.536), precision@100 0.08–0.49 by campaign. Reproduced in
-`notebooks/01_eda.ipynb` §6b. The released similarity is exactly 0 for 80 % of normal accounts
+`notebooks/radar_notebook.ipynb` §7.1. The released similarity is exactly 0 for 80 % of normal accounts
 and 9 % of IO accounts, so part of this signal may reflect how the feature was computed.
 
 **Simple-input model** (17 features rebuildable from a plain replies file; `radar.simple`):
