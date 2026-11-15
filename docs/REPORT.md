@@ -15,7 +15,7 @@ Every number comes from a file in the repo:
 | 4 · Modeling | `src/radar/model.py`, `src/radar/simple.py` |
 | 5 · Evaluation | [RESULTS.md](RESULTS.md), `artifacts/metrics.csv` |
 | 6 · Model selection | this file §6 |
-| 7 · Deployment | https://digital-manipulation-radar.streamlit.app, `app/`, `src/radar/deploy.py` |
+| 7 · Deployment | https://cluex-tool.streamlit.app, `app/`, `src/radar/deploy.py` |
 
 ---
 
@@ -248,7 +248,7 @@ rank, and states that most accounts above the threshold are false alarms on real
 
 ## 7 · Deployment
 
-**Live app:** https://digital-manipulation-radar.streamlit.app (Streamlit Community Cloud, free tier). We chose
+**Live app:** https://cluex-tool.streamlit.app (Streamlit Community Cloud, free tier). We chose
 Streamlit because:
 
 - the brief lists it as an acceptable tool;
