@@ -35,7 +35,7 @@ if SRC is None:
 @st.cache_resource(show_spinner=False)
 def get_store(stamp: float) -> Store:
     s = Store.load()
-    s.campaigns(), s.tweets()          # build the summaries once per server, not on the first click
+    _ = (s.campaigns(), s.tweets())     # build the summaries once per server, not on the first click
     return s
 
 
