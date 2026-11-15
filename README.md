@@ -9,6 +9,7 @@ Zenodo [10.5281/zenodo.13896308](https://doi.org/10.5281/zenodo.13896308), **CC 
 The plan, verified dataset facts, risks and team schedule are in [docs/PLAN.md](docs/PLAN.md).
 The exploratory data analysis, with charts and the decision each finding led to, is in
 [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb); model results are in [docs/RESULTS.md](docs/RESULTS.md).
+**The full report — the seven project steps and the reason behind every choice — is [docs/REPORT.md](docs/REPORT.md).**
 
 ## Layout
 
