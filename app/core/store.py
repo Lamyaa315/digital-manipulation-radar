@@ -116,10 +116,16 @@ class Store:
 
     @staticmethod
     def _prep_replies(r: pd.DataFrame) -> pd.DataFrame:
-        r["t"] = snowflake_time(r[C.COL_REPLY]).to_numpy()
-        r["t_post"] = snowflake_time(r[C.COL_TWEET]).to_numpy()
-        r["delay_min"] = ((r["t"] - r["t_post"]).dt.total_seconds() / 60).astype("float32")
-        return r.sort_values([C.COL_TWEET, "t"]).reset_index(drop=True)
+        # vectorised: tweet IDs carry their own millisecond timestamp (no per-row Python objects)
+        ms_r = (r[C.COL_REPLY].astype("int64").to_numpy() >> 22) + TWEPOCH_MS
+        ms_p = (r[C.COL_TWEET].astype("int64").to_numpy() >> 22) + TWEPOCH_MS
+        order = np.lexsort((ms_r, r[C.COL_TWEET].to_numpy()))
+        r = r.iloc[order].reset_index(drop=True)
+        ms_r, ms_p = ms_r[order], ms_p[order]
+        r["t"] = pd.to_datetime(ms_r, unit="ms", utc=True)
+        r["t_post"] = pd.to_datetime(ms_p, unit="ms", utc=True)
+        r["delay_min"] = ((ms_r - ms_p) / 60000).astype("float32")
+        return r
 
     @classmethod
     def _finish(cls, info, acc, edges, r, metrics, imp, texts, thr, **kw) -> "Store":
@@ -197,7 +203,14 @@ class Store:
     # -- datasets ------------------------------------------------------------------------
     def campaigns(self) -> pd.DataFrame:
         """Selectable datasets = held-out campaign groups (each was scored by a model that
-        never saw it)."""
+        never saw it). Computed once, then kept."""
+        if "_campaigns" in self.__dict__:
+            return self.__dict__["_campaigns"]
+        out = self._campaigns_build()
+        self.__dict__["_campaigns"] = out
+        return out
+
+    def _campaigns_build(self) -> pd.DataFrame:
         g = self.acc.groupby("campaign_group")
         t = self.replies.assign(cg=self.replies[C.COL_USER].map(self.acc["campaign_group"]))
         out = pd.DataFrame({
@@ -375,8 +388,10 @@ class Store:
                                     flag=self.replies[C.COL_USER].map(self.acc["flagged"]),
                                     cg=self.replies[C.COL_USER].map(self.acc["campaign_group"]))
             tw = r.groupby(C.COL_TWEET).agg(replies=("t", "size"), flagged=("flag", "sum"),
-                                            posted=("t_post", "first"), first=("t", "min"),
-                                            campaign=("cg", lambda s: s.mode().iat[0]))
+                                            posted=("t_post", "first"), first=("t", "min"))
+            most = (r.groupby([C.COL_TWEET, "cg"]).size().rename("n").reset_index()
+                     .sort_values(["n", "cg"], ascending=[False, True]).drop_duplicates(C.COL_TWEET))
+            tw["campaign"] = most.set_index(C.COL_TWEET)["cg"]          # each tweet's most common campaign
             tw["text"] = tw.index.map(self.texts)
             tw["tweet"] = tw.index.map(short_tweet)
             self._tw = tw.sort_values("flagged", ascending=False)
