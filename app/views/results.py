@@ -188,6 +188,63 @@ def _top_accounts(inv) -> None:
                f"Full list of {len(q)} with reasons: in the CSV download.")
 
 
+# (column, label, unit, words for lower / higher than normal accounts, how to show the value)
+WHY_FULL = [("age", "Account age", "years", ("newer", "older"), lambda v: f"{v:.1f}"),
+            ("mean_cosine", "How alike their replies are", "0 – 1", ("less alike", "more alike"), lambda v: f"{v:.2f}"),
+            ("max_cosine", "Closest copy of another reply", "0 – 1", ("less copied", "near-copies"), lambda v: f"{v:.2f}"),
+            ("50%_diff_min", "Median reply delay", "hours", ("faster", "slower"), lambda v: f"{v:.1f}"),
+            ("followers_ratio", "Followers ratio", "", ("lower", "higher"), lambda v: f"{v:.0f}")]
+WHY_SIMPLE = [("age_years", "Account age", "years", ("newer", "older"), lambda v: f"{v:.1f}"),
+              ("50%_delay_h", "Median reply delay", "hours", ("faster", "slower"), lambda v: f"{v:.1f}"),
+              ("log_followers", "Followers", "", ("fewer", "more"), lambda v: f"{np.expm1(v):,.0f}"),
+              ("n_tweets", "Tweets they replied to", "", ("fewer", "more"), lambda v: f"{v:.0f}")]
+
+
+def _why(inv, store) -> None:
+    """The listed accounts next to ordinary accounts, feature by feature — what makes them stand out together."""
+    if inv.source == "simple":
+        from app.views.upload import simple_scorer
+        sc = simple_scorer()
+        ns, spec = (sc.ns if sc is not None else None), WHY_SIMPLE
+    else:
+        ns, spec = store._normal_stats(), WHY_FULL
+    ids = list(inv.queue.index)
+    feats = inv.feats.reindex(ids)
+    cards = []
+    for col, label, unit, (lo, hi), fmt in spec:
+        if ns is None or col not in feats or col not in ns["med"] or feats[col].notna().sum() == 0:
+            continue
+        v, n = float(feats[col].median()), float(ns["med"][col])
+        gap = abs(v - n) / max(abs(n), abs(v), 1e-9)
+        word = "similar" if gap < .25 else (lo if v < n else hi)
+        hot = word != "similar"
+        cards.append(f'<div class="kpi{" hot" if hot else ""}" style="display:block"><div class="t">{label}</div>'
+                     f'<div class="v" style="color:{T.LIME if hot else T.TEXT}">{fmt(v)}'
+                     f'<span style="font-size:14px;color:#8B8D93;font-weight:400"> {unit}</span></div>'
+                     f'<div class="s">normal accounts: <b style="color:#F2F2F0">{fmt(n)}</b> · '
+                     f'<b style="color:{T.LIME if hot else "#B9BBC1"}">{word}</b></div></div>')
+    # replying together: tweets that several of the listed accounts replied to, and links between them
+    together = []
+    if inv.replies is not None and len(inv.replies):
+        r = inv.replies[inv.replies[C.COL_USER].isin(ids)]
+        per_tweet = r.groupby(C.COL_TWEET)[C.COL_USER].nunique()
+        k = int((per_tweet >= 3).sum())
+        if k:
+            together.append(f"<b>{k:,}</b> tweets got replies from 3 or more of these accounts")
+    e = inv.edges[inv.edges["u"].isin(ids) & inv.edges["v"].isin(ids)] if len(inv.edges) else inv.edges
+    if len(e):
+        together.append(f"<b>{len(e):,}</b> pairs of them keep replying to the same tweets "
+                        f"(up to <b>{int(e['shared'].max())}</b> tweets in common)")
+    in_g = int((inv.queue["group"] != "").sum())
+    together.append(f"<b>{in_g}</b> of the {len(ids)} belong to a co-reply group")
+    html(f'<div class="panel-h">{ICONS["net"]}Why these {len(ids)} accounts look coordinated</div>')
+    st.caption("Median of the listed accounts next to the median of ordinary accounts in the data. "
+               "Lime = clearly different from normal.")
+    if cards:
+        html(f'<div class="kpis" style="grid-template-columns:repeat({len(cards)},1fr)">' + "".join(cards) + '</div>')
+    html('<div class="notice" style="font-size:15px;line-height:1.8">' + " · ".join(together) + '</div>')
+
+
 def render(store) -> None:
     inv = st.session_state.get("inv")
     if inv is None:
@@ -216,6 +273,9 @@ def render(store) -> None:
 
     if inv.focus:
         focus_section(inv)
+
+    with st.container(border=True):
+        _why(inv, store)
 
     left, right = st.columns([2, 3], gap="medium")
     with left.container(border=True):
