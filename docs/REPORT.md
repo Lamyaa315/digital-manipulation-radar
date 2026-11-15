@@ -9,7 +9,7 @@ Every number comes from a file in the repo:
 
 | Step | Where to look |
 |---|---|
-| 1 · Problem definition | this file §1, [PLAN.md §1](PLAN.md) |
+| 1 · Problem definition | this file §1 |
 | 2 · EDA | [notebooks/radar_notebook.ipynb](../notebooks/radar_notebook.ipynb) §2–3 |
 | 3 · Preprocessing | `src/radar/data.py`, `src/radar/graph.py`, `src/radar/model.py` |
 | 4 · Modeling | `src/radar/model.py`, `src/radar/simple.py` |
@@ -40,8 +40,7 @@ Zenodo 10.5281/zenodo.13896308, CC BY 4.0. It contains:
 
 - **Real labels.** The labels come from the platform, not from us, so the model can be tested honestly.
 - **Narrowed scope.** We kept to what the data supports: coordinated *replies*. We dropped the original
-  proposal's URL sharing and time-window clustering because the dataset has no URLs or raw timestamps
-  ([PLAN.md §1](PLAN.md)).
+  proposal's URL sharing and time-window clustering because the dataset has no URLs or raw timestamps.
 - **Ranking, not labelling.** With 1 IO account per 100 (see EDA), a yes/no label would mostly produce false
   accusations. A ranked list that a person reviews is both more useful and more responsible.
 

@@ -1,7 +1,7 @@
 # Results — first full run on the real data (2026-11-11)
 
 Source of every number: `artifacts/metrics.csv`, `artifacts/importance.csv`,
-`artifacts/run_info.json` (run log: `artifacts_run.log`). Re-run with `python -m radar.pipeline`.
+`artifacts/run_info.json`. Re-run with `python -m radar.pipeline`.
 Settings: training negatives downsampled to 10 per positive, test folds untouched,
 threshold chosen on training campaigns, co-reply edges need ≥ 3 shared target tweets.
 

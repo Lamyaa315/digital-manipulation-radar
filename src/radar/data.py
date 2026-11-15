@@ -17,7 +17,7 @@ def _require(path: Path) -> Path:
     if not path.exists():
         raise FileNotFoundError(
             f"{path} not found. Run `python scripts/download_data.py` "
-            "(or `python scripts/make_sample_data.py` and pass --sample)."
+            "(the data is on Zenodo: 10.5281/zenodo.13896308)."
         )
     return path
 

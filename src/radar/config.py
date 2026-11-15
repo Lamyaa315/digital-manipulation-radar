@@ -1,7 +1,7 @@
 """All paths, file names, column names and tunable constants live here.
 
 Column names come from the dataset's official datasheet. Confirm them on Day 1 with
-`python scripts/inspect_data.py` and fix them here if they differ. Nothing else in the code
+the downloaded files and fix them here if they differ. Nothing else in the code
 should hard-code a column name.
 """
 from pathlib import Path
