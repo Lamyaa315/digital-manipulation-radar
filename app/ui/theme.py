@@ -132,6 +132,58 @@ hr, [data-testid="stDivider"] {{ border-color:var(--line) !important; }}
 .pipe .node .idx {{ fill:{LIME}; font-family:'JetBrains Mono',monospace; font-size:10px; }}
 .pipe .flow {{ stroke:{LIME}; stroke-width:1.2; fill:none; stroke-dasharray:3 7; animation:flow 1.6s linear infinite; opacity:.8; }}
 @keyframes flow {{ to {{ stroke-dashoffset:-20; }} }}
+
+/* ---- v3: rounded panels, icon nav, KPI cards (from the team's mockups) ---- */
+.brand {{ font-size:14px; font-weight:700; letter-spacing:.02em; gap:10px; }}
+[data-testid="stButtonGroup"] > div {{ justify-content:flex-end; flex-wrap:nowrap; }}
+.brand svg {{ flex:none; width:34px; }}
+.brand .sep {{ flex:none; width:1px; height:24px; background:#3A3B40; margin:0 6px 0 10px; display:inline-block; }}
+.brand small {{ margin-left:0; font-size:12px; letter-spacing:.12em; color:#B9BBC1; }}
+[data-testid="stButtonGroup"] button {{ border:none !important; border-radius:10px !important; font-family:'Inter',sans-serif !important;
+  font-size:14px !important; letter-spacing:0 !important; color:var(--text) !important; padding:6px 12px !important; }}
+[data-testid="stButtonGroup"] button p {{ font-family:'Inter',sans-serif !important; font-size:14px !important; }}
+[data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[aria-pressed="true"] {{
+  box-shadow:0 0 18px rgba(198,244,50,.25); }}
+[data-testid="stButtonGroup"] button[aria-checked="true"] span, [data-testid="stButtonGroup"] button[aria-checked="true"] p {{ color:#0A0A0A !important; }}
+.stButton > button, .stDownloadButton > button {{ border-radius:10px; min-height:44px; }}
+.stButton > button[kind="primary"] {{ font-size:15px; box-shadow:0 0 22px rgba(198,244,50,.18); }}
+[data-baseweb="select"] > div, .stTextInput input, .stTextArea textarea, [data-testid="stFileUploaderDropzone"] {{ border-radius:10px !important; }}
+[data-testid="stFileUploaderDropzone"] {{ border:1.5px dashed rgba(198,244,50,.45) !important; min-height:120px; }}
+[data-testid="stVerticalBlockBorderWrapper"] {{ border-radius:16px !important; background:rgba(12,12,14,.78); }}
+[data-testid="stExpander"] {{ border-radius:12px; }}
+.ptitle {{ border-left:4px solid var(--lime); padding:2px 0 2px 18px; margin:6px 0 18px; }}
+.ptitle h1 {{ font-size:34px !important; font-weight:700 !important; margin:0 !important; padding:0 !important; letter-spacing:-.02em; }}
+.ptitle p {{ color:#B9BBC1; margin:4px 0 0; font-size:15px; }}
+.panel-h {{ display:flex; align-items:center; gap:10px; font-size:19px; font-weight:600; margin:2px 0 10px; }}
+.panel-h svg {{ width:24px; height:24px; stroke:var(--lime); fill:none; stroke-width:1.8; }}
+.kpis {{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:4px 0 18px; }}
+.kpi {{ border:1px solid #2A2B30; border-radius:16px; padding:18px 20px; display:flex; gap:16px; align-items:center; background:var(--surface); }}
+.kpi.hot {{ border:1.5px solid var(--lime); box-shadow:0 0 26px rgba(198,244,50,.16) inset, 0 0 20px rgba(198,244,50,.12); }}
+.kpi svg {{ width:42px; height:42px; stroke:var(--lime); fill:none; stroke-width:1.7; flex:none; }}
+.kpi .t {{ font-size:14px; font-weight:500; }} .kpi .v {{ font-size:32px; font-weight:700; line-height:1.15; letter-spacing:-.02em; }}
+.kpi .s {{ color:#B9BBC1; font-size:13px; }}
+.chip {{ border:1px solid #2A2B30; border-radius:14px; padding:12px 18px; display:flex; gap:14px; align-items:center;
+  background:var(--surface); font-size:13.5px; color:#B9BBC1; justify-content:flex-end; }}
+.chip b {{ color:var(--text); font-weight:600; }}
+.legend-row {{ display:grid; grid-template-columns:16px 1fr auto; gap:12px; align-items:center; padding:9px 0; font-size:15px; }}
+.legend-row i {{ width:12px; height:12px; border-radius:50%; display:block; }}
+.legend-row b {{ font-weight:600; }}
+.barrow {{ display:grid; grid-template-columns:120px 1fr 52px; gap:14px; align-items:center; padding:7px 0; font-size:14px;
+  border-bottom:1px solid #16171A; }}
+.barrow .track {{ height:10px; background:#1E1F23; border-radius:6px; overflow:hidden; }}
+.barrow .fill {{ height:10px; background:var(--lime); border-radius:6px; }}
+.barrow .fill.low {{ background:#6B6E76; }}
+.barrow .num {{ text-align:right; font-weight:600; font-family:'JetBrains Mono',monospace; font-size:13px; }}
+.orline {{ display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; margin:10px 0; }}
+.orline::before, .orline::after {{ content:""; flex:1; height:1px; background:#2A2B30; }}
+.orline span {{ border:1px solid #2A2B30; border-radius:10px; padding:2px 12px; }}
+.fieldlbl {{ font-size:15px; font-weight:600; margin:10px 0 2px; }} .fieldlbl span {{ color:var(--muted); font-weight:400; }}
+.hero .kick {{ display:flex; align-items:center; gap:16px; color:var(--lime); font-family:'JetBrains Mono',monospace; font-size:12.5px;
+  letter-spacing:.16em; font-weight:500; }}
+.hero .kick::after {{ content:""; width:44px; height:2px; background:var(--lime); }}
+.hero h1 {{ font-weight:700 !important; letter-spacing:-.035em; font-size:clamp(40px,5vw,74px) !important; }}
+.hero h1 em {{ color:var(--lime) !important; }}
+.hero p {{ color:#C9CBD0; }}
 """
 
 

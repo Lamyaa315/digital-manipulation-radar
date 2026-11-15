@@ -52,17 +52,17 @@ def render(store: Store) -> None:
     sa = m.loc["saudi_arabia_112019"]
     mean_pr = m["pr_auc"].mean()
 
-    left, right = st.columns([5, 6], gap="large")
+    left, right = st.columns([6, 5], gap="large")
     with left:
-        html('<div class="hero"><p class="kicker">Digital Manipulation Radar</p>'
+        html('<div class="hero"><p class="kick">DIGITAL MANIPULATION RADAR</p>'
              '<h1>Not every online movement is <em>organic.</em></h1>'
              '<p>State-backed operations flood chosen tweets with replies from accounts that work together. '
              'The Radar scores every replier with a machine-learning model, links the accounts that keep '
              'showing up on the same tweets, and walks an analyst through the evidence.</p></div>')
         a, b = st.columns([3, 2])
-        if a.button("Enter Intelligence Center  →", type="primary", width="stretch"):
+        if a.button("Enter Intelligence Center  →", type="primary", width="stretch", icon=":material/radar:"):
             goto(1)
-        if b.button("How it works", width="stretch"):
+        if b.button("How It Works", width="stretch", icon=":material/play_arrow:"):
             goto(5)
     with right:
         p = hero_payload(store, HERO_CAMPAIGN)
@@ -107,7 +107,7 @@ def render(store: Store) -> None:
          '<p>Load a campaign from the dataset, or upload a plain replies file from X. You get a ranked queue, '
          'the reasons behind each score, the groups, and a report you can download.</p></div></div>')
     c1, c2, _ = st.columns([2, 2, 3])
-    if c1.button("Enter Intelligence Center  →", type="primary", width="stretch", key="cta2"):
+    if c1.button("Enter Intelligence Center  →", type="primary", width="stretch", key="cta2", icon=":material/radar:"):
         goto(1)
     if c2.button("About the model", width="stretch", key="cta3"):
         goto(5)

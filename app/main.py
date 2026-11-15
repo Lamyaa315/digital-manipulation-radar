@@ -45,12 +45,13 @@ if "_goto" in st.session_state:
 if not st.session_state.get("nav"):          # clicking the active tab again clears it
     st.session_state["nav"] = st.session_state.get("_page", PAGES[0])
 
-brand, nav = st.columns([4, 5], vertical_alignment="center")
+brand, nav = st.columns([9, 11], vertical_alignment="center")
 with brand:
-    html('<div class="brand"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" '
-         'fill="none" stroke="#F2F2F0" stroke-opacity=".5" stroke-width="1"/><circle cx="12" cy="12" r="6" fill="none" '
-         'stroke="#F2F2F0" stroke-opacity=".3" stroke-width="1"/><path d="M12 12 L12 1" stroke="#C6F432" stroke-width="1.2"/>'
-         '<circle cx="16.5" cy="7.5" r="2" fill="#C6F432"/></svg>DIGITAL MANIPULATION RADAR<small>intelligence center</small></div>')
+    html('<div class="brand"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15.5" fill="none" '
+         'stroke="#C6F432" stroke-width="2"/><circle cx="17" cy="17" r="9" fill="none" stroke="#C6F432" stroke-opacity=".55" '
+         'stroke-width="1.4"/><path d="M17 17 L27 8" stroke="#C6F432" stroke-width="2" stroke-linecap="round"/>'
+         '<circle cx="17" cy="17" r="2.6" fill="#C6F432"/></svg>DIGITAL MANIPULATION RADAR<span class="sep"></span>'
+         '<small>INTELLIGENCE CENTER</small></div>')
 with nav:
     page = st.segmented_control("Navigate", PAGES, key="nav", label_visibility="collapsed")
 page = page or st.session_state.get("_page", PAGES[0])

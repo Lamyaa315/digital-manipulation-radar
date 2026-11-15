@@ -2,12 +2,15 @@
 from datetime import datetime, timezone
 from html import escape
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from app.core.store import C, graph_payload
+from app.ui import canvas
 from app.ui import theme as T
-from app.ui.blocks import figures, html
+from app.ui.blocks import compact, html
 from app.views.common import goto
 
 MODEL_NAME = {"dataset": "a model that never saw this campaign", "upload": "the full model",
@@ -47,64 +50,189 @@ Scores rank accounts for review; a high score is not proof of a fake account.</p
 </body></html>"""
 
 
+ICONS = {
+    "flag": '<svg viewBox="0 0 24 24"><path d="M4 21V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>',
+    "clock": '<svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+    "users": ('<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>'
+              '<circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.9.3 5.5 2.6 5.5 5.8"/></svg>'),
+    "net": ('<svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="6" r="2.2"/><circle cx="12" cy="12" r="2.6"/>'
+            '<circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/>'
+            '<path d="M7 7.3 10 10.5M17 7.3 14 10.5M7 16.7 10 13.5M17 16.7 14 13.5"/></svg>'),
+    "pie": '<svg viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>',
+    "time": '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    "list": ('<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/>'
+             '<circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>'),
+}
+TICKS = [1, 10, 30, 60, 120, 360, 720, 1440]
+TICK_TXT = ["1 min", "10 min", "30 min", "1 h", "2 h", "6 h", "12 h", "24 h"]
+
+
+def _dur(m: float) -> str:
+    return "—" if m != m else f"{m:.0f} min" if m < 90 else f"{m / 60:.1f} h" if m < 48 * 60 else f"{m / 1440:.0f} days"
+
+
+@st.cache_data(show_spinner=False)
+def _campaign_delays(_store, campaign: str) -> pd.DataFrame:
+    """Every reply by an account of this campaign: minutes after the tweet, and whether the account is flagged."""
+    acc = _store.acc[_store.acc["campaign_group"] == campaign]
+    r = _store.replies[_store.replies[C.COL_USER].isin(acc.index)]
+    return pd.DataFrame({"delay_min": r["delay_min"].to_numpy(),
+                         "flag": r[C.COL_USER].map(acc["flagged"]).fillna(False).to_numpy(bool)})
+
+
+def _delays(inv, store) -> pd.DataFrame | None:
+    if inv.source == "dataset" and inv.campaign:
+        return _campaign_delays(store, inv.campaign)
+    if inv.replies is None or "delay_min" not in inv.replies:
+        return None
+    r = inv.replies
+    sc = inv.all_scores.reindex(r[C.COL_USER]).to_numpy()
+    return pd.DataFrame({"delay_min": r["delay_min"].to_numpy(), "flag": sc >= inv.threshold})
+
+
+def _scores(inv, store) -> pd.Series:
+    if inv.source == "dataset" and inv.campaign:
+        return store.acc.loc[store.acc["campaign_group"] == inv.campaign, "score"]
+    return inv.all_scores
+
+
+def _kpis(inv, d) -> None:
+    half = float(d["delay_min"].median()) if d is not None and len(d) else float("nan")
+    in_groups = sum(len(m) for m in inv.groups.values())
+    kp = [("flag", "Flagged for review", f"{inv.n_above / max(inv.n_scored, 1):.1%}",
+           f"of analyzed accounts ({inv.n_above:,} of {inv.n_scored:,})", "hot"),
+          ("clock", "Reply speed", _dur(half),
+           "half of the replies came within this time" if d is not None else "needs reply times (not in this file)", ""),
+          ("users", "Accounts analyzed", f"{inv.n_scored:,}", "every account scored by the model", ""),
+          ("net", "Coordinated groups", f"{len(inv.groups)}", f"{in_groups:,} accounts keep replying together", "")]
+    html('<div class="kpis">' + "".join(
+        f'<div class="kpi {c}">{ICONS[i]}<div><div class="t">{t}</div><div class="v">{v}</div><div class="s">{s}</div></div></div>'
+        for i, t, v, s, c in kp) + '</div>')
+
+
+def _classification(inv, scores: pd.Series) -> None:
+    html(f'<div class="panel-h">{ICONS["pie"]}Account Classification</div>')
+    hi = int((scores >= inv.threshold).sum())
+    mid = int(((scores >= inv.threshold / 2) & (scores < inv.threshold)).sum())
+    lo = int(len(scores) - hi - mid)
+    tot = max(len(scores), 1)
+    c1, c2 = st.columns([1, 1], vertical_alignment="center")
+    fig = go.Figure(go.Pie(values=[hi, mid, lo], hole=.68, sort=False, direction="clockwise",
+                           marker=dict(colors=[T.LIME, "#7FA31F", "#B9BBC1"], line=dict(color=T.BG, width=2)),
+                           textinfo="none", hovertemplate="%{value:,} accounts<extra></extra>"))
+    fig.update_layout(height=220, showlegend=False, margin=dict(l=0, r=0, t=0, b=0),
+                      annotations=[dict(text=f"<b>{compact(tot)}</b><br>accounts", showarrow=False,
+                                        font=dict(size=18, color=T.TEXT))])
+    c1.plotly_chart(fig, width="stretch", key="donut")
+    c2.markdown("".join(f'<div class="legend-row"><i style="background:{col}"></i><span>{lab}</span>'
+                        f'<b>{v / tot:.1%} <span style="color:#8B8D93;font-weight:400">({v:,})</span></b></div>'
+                        for lab, v, col in [("Likely coordinated", hi, T.LIME), ("Borderline", mid, "#7FA31F"),
+                                            ("Likely organic", lo, "#B9BBC1")]), unsafe_allow_html=True)
+    st.caption(f"Likely coordinated = score ≥ {inv.threshold:.2f} (the review threshold); borderline = at least half "
+               "of it. A score ranks accounts for review — it is not proof.")
+
+
+def _over_time(d) -> None:
+    html(f'<div class="panel-h">{ICONS["time"]}Replies Over Time</div>')
+    if d is None or not len(d):
+        st.info("This file has no reply times, so the timing view is not available. "
+                "Upload a replies file with times to see it.")
+        return
+    fig = go.Figure()
+    for flag, name, col, w in [(False, "other accounts", "#8B8D93", 2), (True, "flagged accounts", T.LIME, 3)]:
+        x = np.sort(d.loc[d["flag"] == flag, "delay_min"].clip(lower=.5).to_numpy())
+        if len(x) < 2:
+            continue
+        y = np.arange(1, len(x) + 1) / len(x) * 100
+        keep = np.unique(np.linspace(0, len(x) - 1, 400).astype(int))
+        fig.add_trace(go.Scatter(x=x[keep], y=y[keep], name=f"{name} ({len(x):,} replies)",
+                                 line=dict(color=col, width=w, shape="hv"),
+                                 fill="tozeroy" if flag else None, fillcolor="rgba(198,244,50,.10)",
+                                 hovertemplate="%{y:.0f}% within %{x:.0f} min<extra></extra>"))
+        if flag:
+            m = float(np.median(x))
+            fig.add_annotation(x=np.log10(m), y=50, text=f"50% within {_dur(m)}", showarrow=True, arrowcolor=T.LIME,
+                               ax=60, ay=-40, bordercolor=T.LIME, borderwidth=1, bgcolor=T.SURFACE,
+                               font=dict(color=T.TEXT, size=12))
+    fig.update_layout(height=300, xaxis=dict(type="log", tickvals=TICKS, ticktext=TICK_TXT, range=[0, np.log10(2880)],
+                                             title="time after the tweet"),
+                      yaxis=dict(range=[0, 101], ticksuffix="%", title="replies so far"),
+                      legend=dict(orientation="h", y=1.1, x=0), margin=dict(l=10, r=10, t=30, b=10))
+    st.plotly_chart(fig, width="stretch", key="rot")
+
+
+def _groups_panel(inv, groups: pd.DataFrame) -> None:
+    html(f'<div class="panel-h">{ICONS["net"]}Coordinated Groups</div>')
+    if not inv.groups:
+        st.caption("No groups among the top accounts — they do not keep replying to the same tweets.")
+        return
+    gsub = {g: list(inv.groups[g])[:60] for g in list(groups["group"].head(6))}
+    ids = list(dict.fromkeys(u for m in gsub.values() for u in m))
+    e = inv.edges[inv.edges["u"].isin(ids) & inv.edges["v"].isin(ids)].nlargest(1500, "shared")
+    acc = pd.DataFrame({"score": inv.all_scores.reindex(ids).fillna(0).to_numpy()}, index=ids)
+    acc["flagged"] = acc["score"] >= inv.threshold
+    p = graph_payload(acc, gsub, e)
+    canvas.network(p, key="res_net", height=340, rotate=0.00002,
+                   caption=f"{len(p['nodes'])} accounts in the {len(gsub)} largest groups · line = replied to the same tweets · ")
+    st.dataframe(groups.head(8), hide_index=True, width="stretch", height=180,
+                 column_config={"mean score": st.column_config.NumberColumn(format="%.2f")})
+
+
+def _top_accounts(inv) -> None:
+    html(f'<div class="panel-h">{ICONS["list"]}Highest-scored Accounts</div>')
+    q = inv.queue
+    html("".join(f'<div class="barrow"><span>{escape(str(r["account"]))}</span><div class="track"><div class="fill'
+                 f'{"" if r["score"] >= inv.threshold else " low"}" style="width:{r["score"] * 100:.0f}%"></div></div>'
+                 f'<span class="num">{r["score"]:.2f}</span></div>' for _, r in q.head(12).iterrows()))
+    st.caption(f"Bar = model score (lime: above the review threshold {inv.threshold:.2f}). "
+               f"Full list of {len(q)} with reasons: Review page or the CSV.")
+
+
 def render(store) -> None:
     inv = st.session_state.get("inv")
     if inv is None:
-        html('<h1 class="page-title">Results</h1>')
-        st.info("No investigation yet.")
+        html('<div class="ptitle"><h1>Investigation Results</h1><p>No investigation yet.</p></div>')
         if st.button("Start one →", type="primary"):
             goto(1)
         return
     q = inv.queue
     groups = _groups(inv)
-    html(f'<p class="kicker">Results · {escape(inv.name)}</p><h1 class="page-title">What the model found</h1>'
-         f'<p class="lead">Scored by {MODEL_NAME[inv.source]}. These are the model\'s results as they are — '
-         'you can download them now, or review the accounts yourself first (optional).</p>')
-    figures([(f"{inv.n_scored:,}", "accounts scored", "", ""),
-             (f"{inv.n_above:,}", f"above review threshold ({inv.threshold:.2f})", "coral", ""),
-             (f"{len(groups)}", f"groups among top {len(q)}", "", ""),
-             (f"{q['score'].iloc[0]:.2f}", "highest score", "", "")])
+    d = _delays(inv, store)
+
+    h1, h2 = st.columns([3, 2], vertical_alignment="center")
+    h1.markdown(f'<div class="ptitle"><h1>Investigation Results</h1><p>Scored by {MODEL_NAME[inv.source]}. '
+                'Review is optional.</p></div>', unsafe_allow_html=True)
+    h2.markdown(f'<div class="chip"><b>{escape(inv.name)}</b> · {datetime.now(timezone.utc):%d %b %Y}</div>',
+                unsafe_allow_html=True)
+    _kpis(inv, d)
 
     a, b, c = st.columns(3)
     a.download_button("Download results (HTML report)", _html(inv, groups).encode(), "radar_results.html",
-                      "text/html", type="primary", width="stretch")
+                      "text/html", type="primary", width="stretch", icon=":material/download:")
     b.download_button("Download ranked accounts (CSV)",
                       q.rename_axis(None).reset_index(names="account_id")[["rank", "account_id", "account", "score",
                                                                            "group", "reasons"]].to_csv(index=False).encode(),
-                      "radar_ranked_accounts.csv", "text/csv", width="stretch")
-    if c.button("Review them yourself (optional) →", width="stretch"):
+                      "radar_ranked_accounts.csv", "text/csv", width="stretch", icon=":material/table:")
+    if c.button("Review them yourself (optional) →", width="stretch", icon=":material/search:"):
         goto(3)
 
     if inv.focus:
         focus_section(inv)
 
-    left, right = st.columns([3, 2], gap="large")
-    with left:
-        html('<div class="section"><span class="num">01</span><span class="name">Highest-scored accounts</span></div>')
-        top = q.head(15).assign(why=q["reasons"].str.split(" · ").str[0])
-        st.dataframe(top[["rank", "account", "score", "group", "why"]], hide_index=True, width="stretch", height=420,
-                     column_config={"rank": st.column_config.NumberColumn("#", width="small"),
-                                    "score": st.column_config.ProgressColumn("score", min_value=0, max_value=1, format="%.2f"),
-                                    "why": st.column_config.TextColumn("main reason", width="large")})
-        st.caption(f"Showing 15 of the top {len(q)}. The full list is in the downloads and on the Review page.")
-    with right:
-        html('<div class="section"><span class="num">02</span><span class="name">Groups</span>'
-             '<span class="note">accounts that keep replying together</span></div>')
-        if groups.empty:
-            st.caption("No groups found among the top accounts (they do not share enough tweets).")
-        else:
-            st.dataframe(groups, hide_index=True, width="stretch", height=230,
-                         column_config={"mean score": st.column_config.NumberColumn(format="%.2f")})
-        html('<div class="section"><span class="num">03</span><span class="name">Score distribution</span></div>')
-        sc = (store.acc.loc[store.acc["campaign_group"] == inv.campaign, "score"] if inv.campaign
-              else inv.all_scores)
-        fig = go.Figure(go.Histogram(x=sc, nbinsx=25, marker_color=T.STEEL))
-        fig.add_vline(x=inv.threshold, line=dict(color=T.LIME, dash="dot"))
-        fig.update_layout(height=200, xaxis_title="score", yaxis=dict(title="accounts", type="log"), bargap=.05)
-        st.plotly_chart(fig, width="stretch")
+    left, right = st.columns([2, 3], gap="medium")
+    with left.container(border=True):
+        _classification(inv, _scores(inv, store))
+    with right.container(border=True):
+        _over_time(d)
+
+    left, right = st.columns([3, 2], gap="medium")
+    with left.container(border=True):
+        _groups_panel(inv, groups)
+    with right.container(border=True):
+        _top_accounts(inv)
 
     if inv.labels is not None:
-        with st.expander("How good is this list? (demo data — Twitter's own labels)"):
+        with st.expander("How good is this list? (demo data — Twitter’s own labels)"):
             n = int(inv.labels.sum())
             st.markdown(f"Of the top **{len(q)}** accounts, **{n}** were removed by Twitter as part of the operation "
                         f"(**{n / len(q):.0%}**).")
