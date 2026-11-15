@@ -1,4 +1,4 @@
-# Digital Manipulation Radar
+# ClueX
 
 Detects accounts that take part in **coordinated reply attacks** (influence-operation accounts
 replying together to the same target tweets), and shows the co-reply groups they form.
@@ -71,21 +71,19 @@ streamlit run app/streamlit_app.py
 
 On Windows PowerShell set the path with `$env:PYTHONPATH = "src"` instead of the `PYTHONPATH=src` prefix.
 
-## The review tool (main app)
+## The app
 
 ```
 streamlit run app/main.py
 ```
 
-A tool for someone investigating a reply attack, in three steps along the top bar:
+A tool for someone investigating a reply attack, along the top bar:
 
 1. **Upload** — pick a campaign from the dataset (demo) or upload your own accounts file
    (format of `models/sample_accounts.csv`) plus an optional replies file (account id, tweet id).
-2. **Review** — accounts ranked by the model, each with plain-language reasons and its group of
-   accounts that reply to the same tweets. Mark each one Suspicious / Looks normal / Unsure, add a
-   note, or mark a whole group at once.
-3. **Report** — summary, list of suspicious accounts and groups, downloadable HTML report and CSV.
-   On dataset campaigns you can also check your decisions against the accounts Twitter removed.
+2. **Results** — share of accounts flagged, reply speed, account classification, replies over time,
+   the co-reply groups and the highest-scored accounts with plain-language reasons. Downloadable HTML
+   report and CSV. On dataset campaigns you can also see how many of the top accounts Twitter removed.
 
 Two upload formats:
 * **Simple replies file (recommended)** — one row per reply: `account_id`, `tweet_id`, `reply_time`, and
@@ -110,8 +108,8 @@ Two upload formats:
 **About** explains both models and shows their evaluation on campaigns they never saw.
 
 * `app/core/store.py` — data (full artifacts, or the lite copy when hosted). No UI.
-* `app/core/review.py` — queue, reasons, decisions. No UI.
-* `app/views/` — upload, review, report, about (datalab.py).
+* `app/core/review.py` — ranked list, reasons, groups. No UI.
+* `app/views/` — home, upload, results, about (datalab.py).
 * Reply times are real: tweet IDs encode their posting time. The dataset's `diff_min` column
   is the reply delay in **hours, rounded up** (not minutes) — checked against these times.
 * Not possible with this data: shared-URL detection (only URL counts are released), reply

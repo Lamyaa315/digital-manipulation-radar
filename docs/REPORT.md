@@ -1,4 +1,4 @@
-# Digital Manipulation Radar: project report
+# ClueX: project report
 
 This report follows the seven steps the project brief asks for. Each step says **what we did** and **why**.
 Every number comes from a file in the repo:
@@ -255,13 +255,13 @@ Streamlit because:
 - it gives a working interface in Python, the same language as the models;
 - it is free to host for anyone with the link.
 
-**It is a usable tool, not only a dashboard.** The flow is **Upload → Results → (optional) Review → Report**:
+**It is a usable tool, not only a dashboard.** The flow is **Upload → Results**:
 
 | Input | Model used |
 |---|---|
 | A campaign from the dataset | Scores from the LOCO run: each account scored by a model that never saw its campaign |
 | **Type it in:** a table in the app (tweet link, reply link, account, time, followers, …) | simple-input model |
-| **Replies file:** a plain CSV/Excel export, many column names understood, X links accepted | simple-input model |
+| **Replies file:** a plain CSV export, many column names understood, X links accepted | simple-input model |
 | **Dataset format:** a file with the 76 released features | full model |
 
 **The output:**
@@ -271,9 +271,6 @@ Streamlit because:
 - the groups that keep replying together;
 - a "the accounts you asked about" verdict when the user names one or two accounts;
 - downloads: an HTML report and a CSV.
-
-**The optional review step:** an analyst can mark accounts as suspicious, normal or unsure, and download a
-signed-off report.
 
 **Design choices and why:**
 

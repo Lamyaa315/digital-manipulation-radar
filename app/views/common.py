@@ -13,8 +13,7 @@ from app.core.store import C, PRETTY, Store, graph_payload, short, short_tweet, 
 from app.ui import theme as T
 from app.ui.blocks import compact, evidence, figures, html, section, tag
 
-PAGES = [":material/home: Home", ":material/upload: Upload", ":material/bar_chart: Results",
-         ":material/search: Review", ":material/description: Report", ":material/info: About"]
+PAGES = [":material/home: Home", ":material/upload: Upload", ":material/bar_chart: Results", ":material/info: About"]
 
 
 def goto(page: int, **state) -> None:

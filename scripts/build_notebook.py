@@ -31,7 +31,7 @@ def note(k):
 
 # ---------------------------------------------------------------- 0
 md("""
-# Digital Manipulation Radar
+# ClueX
 **Machine Learning Unit 4 & 5 — final project** · Lamyaa Alnahdi · Raghad Alqahtani · Rawan Alsubaie
 
 | Step | Section |

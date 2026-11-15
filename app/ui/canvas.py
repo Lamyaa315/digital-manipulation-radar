@@ -18,6 +18,16 @@ canvas.drag { cursor:grabbing; }
   opacity:0; transition:opacity .12s; white-space:nowrap; z-index:2; }
 .tip b { color:#C6F432; font-weight:500; } .tip .c { color:#C6F432; }
 .hud { position:absolute; left:10px; bottom:8px; font:10.5px 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:#8B8D93; pointer-events:none; }
+.tw { position:absolute; width:230px; background:rgba(14,14,17,.97); border:1px solid #C6F432; border-radius:14px;
+  padding:9px 12px; font:12.5px/1.45 Inter,system-ui,sans-serif; color:#F2F2F0; opacity:0; transform:scale(.8) translateY(8px);
+  transition:opacity .35s ease, transform .4s cubic-bezier(.2,1.4,.4,1); pointer-events:none; z-index:3;
+  box-shadow:0 0 24px rgba(198,244,50,.2); }
+.tw.on { opacity:1; transform:none; }
+.tw .h { color:#8B8D93; font-size:11.5px; display:flex; align-items:center; gap:6px; }
+.tw .h i { width:16px; height:16px; border-radius:50%; background:#C6F432; display:inline-block; flex:none; }
+.tw .h b { color:#F2F2F0; font-weight:600; }
+.tw .x { margin-top:5px; } .tw .x b { color:#C6F432; }
+.tw .m { color:#C6F432; font:11px 'JetBrains Mono',monospace; margin-top:3px; }
 .hud i { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 5px 0 12px; vertical-align:-1px; }
 """
 
@@ -45,6 +55,24 @@ export default function(component) {
   if (S.sig !== sig) { S.sig = sig; S.view = { k: 1, tx: 0, ty: 0 }; S.sel = data.selected_node || null;
                        S.grp = data.selected_group || null; S.moved = {}; }
   else { if (data.selected_group !== undefined) S.grp = data.selected_group || S.grp; }
+  // pop-up "tweets": real reply activity of flagged accounts (only when the payload asks for it)
+  if (S.iv) clearInterval(S.iv);
+  wrap.querySelectorAll('.tw').forEach(e => e.remove());
+  S.bub = [];
+  const TW = data.tweets ? nodes.filter(n => n.flag && n.tw) : [];
+  function spawn() {
+    if (!TW.length || S.bub.length >= 2) return;
+    const n = TW[Math.random() * TW.length | 0];
+    if (S.bub.some(b => b.n === n)) return;
+    const el = document.createElement('div'); el.className = 'tw'; const d = n.tw;
+    el.innerHTML = `<div class="h"><i></i><b>@${n.label}</b>· ${d.when}</div>` +
+      `<div class="x">Replied to <b>${d.n}</b> attacked tweet${d.n > 1 ? 's' : ''}</div><div class="m">${d.med}</div>`;
+    wrap.appendChild(el);
+    const b = { n, el, side: Math.random() < .5 ? -1 : 1 }; S.bub.push(b);
+    requestAnimationFrame(() => el.classList.add('on'));
+    setTimeout(() => { el.classList.remove('on'); setTimeout(() => { el.remove(); S.bub = S.bub.filter(x => x !== b); }, 420); }, 3600);
+  }
+  if (TW.length) { S.iv = setInterval(spawn, 1800); setTimeout(spawn, 700); }
   hud.innerHTML = (data.caption || '') + '<i style="background:#C6F432"></i>above review threshold' +
                   '<i style="background:#55585F"></i>below' + '<i style="background:#F2F2F0"></i>selected links';
 
@@ -119,6 +147,16 @@ export default function(component) {
       else if (sel && neigh.has(n)) { ctx.strokeStyle = 'rgba(198,244,50,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke(); }
     }
     ctx.globalAlpha = 1;
+    for (const b of (S.bub || [])) {
+      const [x, y] = P[b.n.i], cw = b.el.offsetWidth || 230, ch = b.el.offsetHeight || 70;
+      let left = b.side > 0 ? x + 34 : x - 34 - cw, top = y - ch - 26;
+      left = Math.max(4, Math.min(W - cw - 4, left)); top = Math.max(4, Math.min(H - ch - 4, top));
+      b.el.style.left = left + 'px'; b.el.style.top = top + 'px';
+      const ax = b.side > 0 ? left : left + cw, ay = top + ch;
+      ctx.strokeStyle = 'rgba(198,244,50,.75)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, rad(b.n) + 5 + 2 * Math.sin(t / 180), 0, 6.283); ctx.stroke();
+    }
     // group labels
     if ((data.groups || []).length > 1) {
       ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';

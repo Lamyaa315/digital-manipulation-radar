@@ -1,1 +1,1 @@
-"""Digital Manipulation Radar: detecting accounts in coordinated reply attacks."""
+"""ClueX: detecting accounts in coordinated reply attacks."""

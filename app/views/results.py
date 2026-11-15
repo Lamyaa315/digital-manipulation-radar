@@ -1,4 +1,4 @@
-"""Step 2 — the model's findings, straight away. Reviewing them is optional."""
+"""Step 2 — the model's findings."""
 from datetime import datetime, timezone
 from html import escape
 
@@ -35,13 +35,13 @@ def _html(inv, groups: pd.DataFrame) -> str:
                    f"<td>{escape(r['group'] or '—')}</td><td>{escape(r['reasons'])}</td></tr>" for _, r in q.iterrows())
     grows = "".join(f"<tr><td>{r['group']}</td><td>{r['accounts']}</td><td>{r['mean score']:.2f}</td>"
                     f"<td>{r['above threshold']}</td></tr>" for _, r in groups.iterrows())
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Radar results — {escape(inv.name)}</title>
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>ClueX results — {escape(inv.name)}</title>
 <style>body{{font-family:Inter,Arial,sans-serif;color:#111;max-width:980px;margin:40px auto;padding:0 20px}}
 table{{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0 24px}}
 td,th{{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}} th{{background:#f5f5f5}}
 .m{{color:#666;font-size:13px}}</style></head><body>
 <h1>Model results — {escape(inv.name)}</h1>
-<p class="m">Generated {now} by Digital Manipulation Radar using {MODEL_NAME[inv.source]}. Not reviewed by a person.
+<p class="m">Generated {now} by ClueX using {MODEL_NAME[inv.source]}. Not reviewed by a person.
 Scores rank accounts for review; a high score is not proof of a fake account.</p>
 <p><b>{inv.n_scored:,}</b> accounts scored · <b>{inv.n_above:,}</b> above the review threshold ({inv.threshold:.2f})
 · <b>{len(groups)}</b> groups among the top {len(q)}</p>
@@ -185,7 +185,7 @@ def _top_accounts(inv) -> None:
                  f'{"" if r["score"] >= inv.threshold else " low"}" style="width:{r["score"] * 100:.0f}%"></div></div>'
                  f'<span class="num">{r["score"]:.2f}</span></div>' for _, r in q.head(12).iterrows()))
     st.caption(f"Bar = model score (lime: above the review threshold {inv.threshold:.2f}). "
-               f"Full list of {len(q)} with reasons: Review page or the CSV.")
+               f"Full list of {len(q)} with reasons: in the CSV download.")
 
 
 def render(store) -> None:
@@ -201,20 +201,18 @@ def render(store) -> None:
 
     h1, h2 = st.columns([3, 2], vertical_alignment="center")
     h1.markdown(f'<div class="ptitle"><h1>Investigation Results</h1><p>Scored by {MODEL_NAME[inv.source]}. '
-                'Review is optional.</p></div>', unsafe_allow_html=True)
+                'Every score ranks accounts for a person to check.</p></div>', unsafe_allow_html=True)
     h2.markdown(f'<div class="chip"><b>{escape(inv.name)}</b> · {datetime.now(timezone.utc):%d %b %Y}</div>',
                 unsafe_allow_html=True)
     _kpis(inv, d)
 
-    a, b, c = st.columns(3)
-    a.download_button("Download results (HTML report)", _html(inv, groups).encode(), "radar_results.html",
+    a, b = st.columns(2)
+    a.download_button("Download results (HTML report)", _html(inv, groups).encode(), "cluex_results.html",
                       "text/html", type="primary", width="stretch", icon=":material/download:")
     b.download_button("Download ranked accounts (CSV)",
                       q.rename_axis(None).reset_index(names="account_id")[["rank", "account_id", "account", "score",
                                                                            "group", "reasons"]].to_csv(index=False).encode(),
-                      "radar_ranked_accounts.csv", "text/csv", width="stretch", icon=":material/table:")
-    if c.button("Review them yourself (optional) →", width="stretch", icon=":material/search:"):
-        goto(3)
+                      "cluex_ranked_accounts.csv", "text/csv", width="stretch", icon=":material/table:")
 
     if inv.focus:
         focus_section(inv)

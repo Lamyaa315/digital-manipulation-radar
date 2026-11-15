@@ -1,9 +1,9 @@
-"""Digital Manipulation Radar — a review tool for coordinated reply accounts.
+"""ClueX — finds accounts that attack tweets together (coordinated replies).
 
     streamlit run app/main.py
 
-Flow: 1 Upload (a demo campaign or your own files) → 2 Review (ranked accounts, reasons,
-decisions) → 3 Report (summary + downloads). About explains the model and its evaluation.
+Flow: Upload (a campaign, a replies file, or rows typed in) → Results (scores, groups, downloads).
+About explains the model and its evaluation.
     app/core/store.py    data (full artifacts, or the lite copy when hosted)
     app/core/review.py   queue, reasons, decisions (no UI)
     app/views/           one module per step
@@ -14,13 +14,13 @@ from pathlib import Path
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-st.set_page_config(page_title="Digital Manipulation Radar", page_icon="◎", layout="wide",
+st.set_page_config(page_title="ClueX", page_icon="◎", layout="wide",
                    initial_sidebar_state="collapsed")
 
 from app.core.store import Store  # noqa: E402
 from app.ui import theme  # noqa: E402
 from app.ui.blocks import html  # noqa: E402
-from app.views import datalab, home, report, results, review, upload  # noqa: E402
+from app.views import datalab, home, results, upload  # noqa: E402
 from app.views.common import PAGES  # noqa: E402
 
 theme.apply()
@@ -52,16 +52,14 @@ with brand:
     html('<div class="brand"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15.5" fill="none" '
          'stroke="#C6F432" stroke-width="2"/><circle cx="17" cy="17" r="9" fill="none" stroke="#C6F432" stroke-opacity=".55" '
          'stroke-width="1.4"/><path d="M17 17 L27 8" stroke="#C6F432" stroke-width="2" stroke-linecap="round"/>'
-         '<circle cx="17" cy="17" r="2.6" fill="#C6F432"/></svg>DIGITAL MANIPULATION RADAR<span class="sep"></span>'
-         '<small>INTELLIGENCE CENTER</small></div>')
+         '<circle cx="17" cy="17" r="2.6" fill="#C6F432"/></svg>CLUEX</div>')
 with nav:
     page = st.segmented_control("Navigate", PAGES, key="nav", label_visibility="collapsed")
 page = page or st.session_state.get("_page", PAGES[0])
 st.session_state["_page"] = page
 st.divider()
 
-{PAGES[0]: home, PAGES[1]: upload, PAGES[2]: results, PAGES[3]: review, PAGES[4]: report,
- PAGES[5]: datalab}[page].render(store)
+{PAGES[0]: home, PAGES[1]: upload, PAGES[2]: results, PAGES[3]: datalab}[page].render(store)
 
 foot = "Scores rank accounts for human review. They are not proof of fake accounts or intent."
 if store.lite:

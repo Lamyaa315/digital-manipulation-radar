@@ -166,8 +166,8 @@ def render(store: Store) -> None:
     with right:
         with st.container(border=True):
             html(f'<div class="panel-h">{GEAR}Analysis Settings</div>')
-            n = st.select_slider("Accounts to review", [50, 100, 250, 500, 1000], value=100, key="up_n",
-                                 help="How many of the highest-scored accounts go into the results and the review list.")
+            n = st.select_slider("Accounts to list", [50, 100, 250, 500, 1000], value=100, key="up_n",
+                                 help="How many of the highest-scored accounts go into the results.")
             focus_text = st.text_input("Accounts to check first (optional)", key="up_focus",
                                        placeholder="@handles or IDs, comma-separated",
                                        help="Shown first in the results, with a plain verdict.")

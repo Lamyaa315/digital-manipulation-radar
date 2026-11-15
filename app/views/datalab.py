@@ -20,7 +20,7 @@ def render(store: Store) -> None:
    hashtags/mentions/links and engagement. It gives each account a score from 0 to 1.
 2. **Group** — accounts that reply to the same tweets again and again are linked; tightly linked accounts
    form a group.
-3. **Review** — you go through the accounts from the highest score down, see why each was flagged, and decide.
+3. **Results** — the accounts from the highest score down, why each was flagged, the groups, and a report to download.
 4. **Report** — your decisions become a report you can download and share.
 """)
     if info["is_sample"]:
